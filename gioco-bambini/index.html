@@ -2,7 +2,15 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#8fd3ff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone/icona-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icone/icona-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Giochi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Il Giardino dei Giochi</title>
 <meta name="description" content="Giochi educativi per bambini dai 3 ai 7 anni: memory, conta e colori.">
 <style>
@@ -26,15 +34,16 @@
     color: var(--ink);
     background: linear-gradient(var(--sky) 0%, #e8f7ff 65%, var(--grass) 65%, #6fbf4a 100%);
     background-attachment: fixed;
-    user-select: none;
-    overflow-x: hidden;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    overflow-x: hidden; overscroll-behavior: none;
   }
   button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 
   /* ---------- Barra in alto ---------- */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; padding: 12px 16px; max-width: 900px; margin: 0 auto;
+    gap: 8px; max-width: 900px; margin: 0 auto;
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
   }
   .pill {
     background: var(--card); border-radius: 999px; padding: 8px 16px;
@@ -44,7 +53,7 @@
   .icon-btn { width: 52px; height: 52px; justify-content: center; padding: 0; font-size: 1.6rem; }
   .icon-btn:active, .big-btn:active, .choice:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.15); }
 
-  main { max-width: 900px; margin: 0 auto; padding: 0 16px 32px; }
+  main { max-width: 900px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   .screen { display: none; animation: pop .35s ease; }
   .screen.active { display: block; }
   @keyframes pop { from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 } }
@@ -585,6 +594,11 @@
   };
 
   const games = { memory, count, colors, piano };
+
+  // Installazione come app: funziona anche offline
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
 })();
 </script>
 </body>

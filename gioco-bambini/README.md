@@ -3,7 +3,14 @@
 Giochi educativi per bambini dai **3 ai 7 anni**: basta un browser, senza installare niente e senza internet.
 
 ## Come si gioca
-Apri `index.html` con un browser (Chrome, Safari, Firefox). Funziona su computer, tablet e telefono.
+- **Online:** https://turko86185.github.io/turko86185/gioco-bambini/ (con GitHub Pages attivo)
+- **Sul computer:** apri `index.html` con un browser (Chrome, Safari, Firefox)
+
+## Installarlo come app sul telefono
+1. Apri il link qui sopra sul telefono.
+2. **iPhone (Safari):** tocca Condividi ⬆️, poi "Aggiungi alla schermata Home".
+   **Android (Chrome):** tocca ⋮, poi "Installa app" (o "Aggiungi a schermata Home").
+3. Sulla schermata Home compare l'icona del fiore 🌼. L'app si apre a schermo intero e funziona anche senza internet.
 
 ## I giochi
 | Gioco | Cosa impara il bambino |
@@ -21,4 +28,4 @@ Apri `index.html` con un browser (Chrome, Safari, Firefox). Funziona su computer
 - Niente pubblicità, niente link esterni, nessun dato raccolto
 
 ## Dati tecnici
-Un unico file HTML con CSS e JavaScript, senza librerie esterne. I suoni sono generati con Web Audio API, la voce con Speech Synthesis API e la grafica con emoji e SVG.
+Un unico file HTML con CSS e JavaScript, senza librerie esterne. Un manifest e un service worker (`manifest.webmanifest`, `sw.js`) lo rendono un'app installabile che funziona offline. I suoni sono generati con Web Audio API, la voce con Speech Synthesis API e la grafica con emoji e SVG.
