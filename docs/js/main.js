@@ -370,6 +370,11 @@ function enterGameScreen(ctx) {
   $('#gl').style.display = 'block';
   tryFullscreen();
   checkRotate();
+  if (matchMedia('(pointer: fine)').matches) {
+    const msg = ctx.kind === 'penalty' ? 'Mouse: punta la porta, tieni premuto il tasto sinistro e lascia per tirare'
+      : 'Mouse: Andrea corre verso il puntatore. Clic sinistro = TIRA, clic destro = PASSA';
+    setTimeout(() => { if (game) { hud.hint(msg); setTimeout(() => { if (game && $('#hint').textContent === msg) hud.hint(''); }, 6000); } }, ctx.kind === 'match' ? 3000 : 2300);
+  }
 }
 
 function startMatch({ mode, home, away, stadium }) {

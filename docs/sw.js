@@ -1,5 +1,5 @@
 // Service worker: memorizza tutto il gioco sul dispositivo per giocare anche offline.
-const VERSION = 'afc-v2';
+const VERSION = 'afc-v3';
 const ASSETS = [
   './',
   'css/style.css',

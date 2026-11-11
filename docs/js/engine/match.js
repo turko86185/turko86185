@@ -240,7 +240,7 @@ export class MatchGame extends BaseGame {
       return;
     }
     let speed = 6.7 * (0.8 + p.info.speed * 0.25);
-    if (input.sprint) speed *= 1.32;
+    if (input.sprint || j.far) speed *= 1.32;
     if (hasBall) speed *= 0.88;
     if (p.stunT > 0) speed *= 0.4;
     let vx = j.x * speed, vz = j.z * speed;

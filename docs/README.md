@@ -15,12 +15,13 @@ Funziona nel browser del telefono, si installa come app (PWA) e gioca anche senz
 
 | Comando | Telefono | Tastiera |
 |---|---|---|
-| Muoversi | joystick (tocca e trascina nella metà sinistra dello schermo) | frecce o WASD |
-| Tiro | TIRA (tieni premuto per caricare, lascia per tirare) | Spazio |
-| Passaggio | PASSA | J o X |
+| Muoversi | joystick (tocca e trascina nella metà sinistra dello schermo) | frecce o WASD, oppure mouse: Andrea corre verso il puntatore |
+| Tiro | TIRA (tieni premuto per caricare, lascia per tirare) | Spazio o clic sinistro (tieni premuto) |
+| Passaggio | PASSA | J, X o clic destro (verso il compagno indicato dal mouse) |
 | Scatto | SCATTO (tieni premuto) | Shift |
 | Cambio giocatore | CAMBIO | C o Q |
-| Senza palla | TIRA diventa RUBA (contrasto) | Spazio |
+| Senza palla | TIRA diventa RUBA (contrasto) | Spazio o clic sinistro |
+| Rigori | mirino con il joystick | punta la porta con il mouse |
 
 La **modalità assistita** (attiva di serie) passa al compagno giusto, mira da sola, aiuta a controllare la palla e rende gli avversari meno aggressivi.
 

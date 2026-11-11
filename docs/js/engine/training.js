@@ -149,7 +149,7 @@ export class TrainingGame extends BaseGame {
     if (this.phase === 'end') { a.vel.multiplyScalar(0.9); if (!b.owner) b.step(dt); b.events.length = 0; if (this.phaseT > 3 && !this.done) { this.done = true; this.hud.end(this.summary()); } return; }
     // movimento di Andrea
     const j = this.joyWorld();
-    let sp = 6.8 * (input.sprint ? 1.3 : 1) * (b.owner === a ? 0.95 : 1);
+    let sp = 6.8 * (input.sprint || j.far ? 1.3 : 1) * (b.owner === a ? 0.95 : 1);
     let vx = j.x * sp, vz = j.z * sp;
     if (j.m < 0.2 && !b.owner && this.assisted && this.drill === 'passaggi') {
       const d = Math.hypot(b.pos.x - a.pos.x, b.pos.z - a.pos.z);

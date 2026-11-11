@@ -4,12 +4,13 @@ export const input = {
   sprint: false,
   shootHeld: false, shootHoldT: 0,
   pass: false, shoot: false, shootPower: 0, switch: false, any: false, tap: false,
+  mouseActive: false, mouseX: 0, mouseY: 0, mouseOverUI: false,
   clearEdges() { this.pass = this.shoot = this.switch = this.any = this.tap = false; }
 };
 
 let joyEl, knobEl, zoneEl, active = null, center = { x: 0, y: 0 }, radius = 60;
 const keys = new Set();
-let shootStart = 0;
+let shootStart = 0, mouseShoot = false;
 
 export function setupControls(root) {
   zoneEl = root.querySelector('#joyZone');
@@ -17,6 +18,7 @@ export function setupControls(root) {
   knobEl = root.querySelector('#joyKnob');
 
   zoneEl.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return; // col mouse si gioca seguendo il puntatore (vedi sotto)
     if (active !== null) return;
     active = e.pointerId;
     zoneEl.setPointerCapture(e.pointerId);
@@ -64,6 +66,29 @@ export function setupControls(root) {
   btn('#btnSprint', () => { input.sprint = true; }, () => { input.sprint = false; });
   btn('#btnSwitch', () => { input.switch = true; });
 
+  // ---- MOUSE: il giocatore segue il puntatore, clic sinistro = TIRA (tieni premuto), clic destro = PASSA ----
+  const inGame = () => root.classList.contains('active') && !document.querySelector('.overlay.on');
+  const onField = t => t && (t.id === 'gl' || (t.closest && t.closest('#joyZone')));
+  window.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    input.mouseX = e.clientX; input.mouseY = e.clientY;
+    input.mouseOverUI = !onField(e.target);
+    if (!keys.size) input.mouseActive = true;
+  });
+  document.addEventListener('mouseleave', () => { input.mouseActive = false; });
+  window.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || !inGame() || !onField(e.target)) return;
+    input.mouseX = e.clientX; input.mouseY = e.clientY; input.mouseActive = true; input.mouseOverUI = false;
+    input.any = true; input.tap = true;
+    if (e.button === 0) { input.shootHeld = true; shootStart = performance.now(); mouseShoot = true; }
+    else if (e.button === 2) input.pass = true;
+    e.preventDefault();
+  });
+  window.addEventListener('pointerup', e => {
+    if (e.pointerType === 'mouse' && e.button === 0 && mouseShoot) { mouseShoot = false; releaseShoot(); }
+  });
+  window.addEventListener('contextmenu', e => { if (inGame()) e.preventDefault(); });
+
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
     keys.add(e.code); input.any = true;
@@ -83,6 +108,7 @@ export function setupControls(root) {
 
 function keyDir() {
   if (active !== null) return;
+  if (keys.size) input.mouseActive = false;
   let x = 0, y = 0;
   if (keys.has('ArrowLeft') || keys.has('KeyA')) x -= 1;
   if (keys.has('ArrowRight') || keys.has('KeyD')) x += 1;

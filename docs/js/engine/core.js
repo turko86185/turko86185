@@ -93,9 +93,9 @@ export class BaseGame {
       let dt = Math.min(0.1, (now - last) / 1000);
       if (lowPower && dt < 1 / 40) return; // risparmio batteria: ~30 fps
       last = now;
+      let n = 0;
       if (!this.paused) {
         this.acc += dt * this.timeScale;
-        let n = 0;
         while (this.acc >= STEP && n < 5) { this.fixed(STEP); this.acc -= STEP; n++; this.frame++; }
         if (n === 5) this.acc = 0;
         this.visual(dt * this.timeScale);
@@ -103,7 +103,8 @@ export class BaseGame {
         this.updateParticles(dt * this.timeScale);
       }
       this.renderer.render(this.scene, this.camera);
-      input.clearEdges();
+      // i comandi premuti si consumano solo dopo che la logica di gioco li ha letti
+      if (n > 0 || this.paused) input.clearEdges();
     });
   }
   stop() { this.running = false; this.renderer.setAnimationLoop(null); }
@@ -340,7 +341,26 @@ export class BaseGame {
 
   // input del joystick in coordinate mondo (camera laterale: destra = +x, su = -z)
   joyWorld() {
+    if (input.mouseActive && !input.x && !input.y) return this.mouseWorld();
     return { x: input.x, z: input.y, m: Math.min(1, Math.hypot(input.x, input.y)) };
+  }
+  // punto del campo sotto il mouse (piano y = h)
+  mousePoint(plane) {
+    const r = this.renderer.domElement.getBoundingClientRect();
+    if (!this._ray) { this._ray = new THREE.Raycaster(); this._ndc = new THREE.Vector2(); this._hit = new THREE.Vector3(); }
+    this._ndc.set((input.mouseX - r.left) / r.width * 2 - 1, -((input.mouseY - r.top) / r.height) * 2 + 1);
+    this._ray.setFromCamera(this._ndc, this.camera);
+    return this._ray.ray.intersectPlane(plane || new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), this._hit);
+  }
+  // col mouse: direzione dal giocatore verso il puntatore
+  mouseWorld() {
+    const p = this.controlled || this.andrea;
+    const hit = !input.mouseOverUI && p ? this.mousePoint() : null;
+    if (!hit) return { x: 0, z: 0, m: 0 };
+    const dx = hit.x - p.pos.x, dz = hit.z - p.pos.z, d = Math.hypot(dx, dz);
+    if (d < 0.6) return { x: 0, z: 0, m: 0 };
+    const m = Math.min(1, (d - 0.6) / 2.5);
+    return { x: dx / d * m, z: dz / d * m, m, far: d > 8 };
   }
   charge() { return shootCharge(); }
 }

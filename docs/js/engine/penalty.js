@@ -93,7 +93,9 @@ export class PenaltyGame extends BaseGame {
       this.aim.sway += dt;
       const j = this.joyWorld();
       const W = FIELD.GOAL_W - 0.3, H = FIELD.GOAL_H - 0.25;
-      if (j.m > 0.15) { this.aim.z = clamp(this.aim.z + j.x * dt * 4.2, -W, W); this.aim.y = clamp(this.aim.y - j.z * dt * 3, 0.3, H); }
+      const mhit = input.mouseActive && !input.x && !input.y && !input.mouseOverUI ? this.mousePoint(this._goalPlane || (this._goalPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), HL))) : null;
+      if (mhit) { this.aim.z = clamp(mhit.z, -W, W); this.aim.y = clamp(mhit.y, 0.3, H); }
+      else if (j.m > 0.15) { this.aim.z = clamp(this.aim.z + j.x * dt * 4.2, -W, W); this.aim.y = clamp(this.aim.y - j.z * dt * 3, 0.3, H); }
       else if (!input.shootHeld) { this.aim.z = clamp(this.aim.z + Math.cos(this.aim.sway * 1.1) * dt * 2.2, -W, W); }
       if (input.shoot) { this.power = Math.max(0.3, input.shootPower); this.phase = 'runup'; this.phaseT = 0; this.hud.hint(''); }
     } else if (this.phase === 'runup' || this.phase === 'defend') {
