@@ -259,7 +259,7 @@
   const soundBtn = $('#soundBtn');
   const renderSound = () => { soundBtn.textContent = soundOn ? '🔊' : '🔇'; };
   renderSound();
-  soundBtn.onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); renderSound(); if (!soundOn) speechSynthesis?.cancel(); };
+  soundBtn.onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); renderSound(); if (!soundOn) window.speechSynthesis?.cancel(); };
 
   let ctx = null;
   function audio() {
@@ -311,7 +311,7 @@
     current = id;
     window.scrollTo(0, 0);
   }
-  homeBtn.onclick = () => { speechSynthesis?.cancel(); show('menu'); };
+  homeBtn.onclick = () => { window.speechSynthesis?.cancel(); show('menu'); };
   document.querySelectorAll('[data-game]').forEach(b => b.onclick = () => { audio(); games[b.dataset.game].start(); });
 
   function dots(el, total, done) {
