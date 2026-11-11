@@ -13,7 +13,7 @@ Funziona nel browser del telefono, si installa come app (PWA) e gioca anche senz
 
 ## Comandi
 
-| Comando | Telefono | Tastiera |
+| Comando | Telefono | Computer (tastiera e mouse) |
 |---|---|---|
 | Muoversi | joystick (tocca e trascina nella metà sinistra dello schermo) | frecce o WASD, oppure mouse: Andrea corre verso il puntatore |
 | Tiro | TIRA (tieni premuto per caricare, lascia per tirare) | Spazio o clic sinistro (tieni premuto) |
