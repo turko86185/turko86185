@@ -7,7 +7,7 @@ export const WELCOME_TEXT = 'CIAO ANDREA! SEI PRONTO A DIVENTARE UN GRANDE CAMPI
 /** Primo tocco: necessario su iPhone per attivare audio e voce */
 export function Splash({ onStart }: { onStart: () => void }) {
   return (
-    <div className="screen center dim" onPointerUp={onStart} data-testid="splash">
+    <div className="screen center dim" onClick={onStart} data-testid="splash">
       <div className="ball-bounce">⚽</div>
       <div className="title-xl" style={{ fontSize: 'clamp(30px, 9vw, 70px)' }}>ANDREA</div>
       <h2 style={{ fontSize: 'clamp(20px, 5vw, 36px)' }}>FOOTBALL CHAMPIONS</h2>
