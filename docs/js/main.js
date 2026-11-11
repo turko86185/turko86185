@@ -108,8 +108,6 @@ function picker(el, selected, onPick, exclude) {
     el.querySelectorAll('.tcard').forEach(x => x.classList.toggle('sel', x === b));
     onPick(b.dataset.team);
   });
-  const s = el.querySelector('.tcard.sel');
-  if (s) requestAnimationFrame(() => s.scrollIntoView({ inline: 'center', block: 'nearest' }));
 }
 function chips(el, items, selected, onPick) {
   el.innerHTML = items.map(i => `<button class="chip ${i.v === selected ? 'sel' : ''} ${i.locked ? 'locked' : ''}" data-v="${i.v}">${i.label}</button>`).join('');

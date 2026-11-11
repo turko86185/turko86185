@@ -113,7 +113,9 @@ button:focus-visible { outline: 4px solid var(--sun); outline-offset: 3px; }
 .scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 24px; -webkit-overflow-scrolling: touch; min-height: 0; }
 .scroll h3 { margin: 14px 0 8px; font-size: 20px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 .lead { font-size: 20px; margin: 4px 0 8px; }
-.team-picker { display: flex; gap: 10px; overflow-x: auto; padding: 4px 4px 10px; scroll-snap-type: x proximity; }
+.team-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding: 4px 0 10px; }
+.team-picker .tcard { width: auto; padding: 8px 4px; font-size: 14px; }
+.team-picker .tcard .badge { width: 46px; height: 46px; }
 .tcard { flex: none; width: 104px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 18px; background: var(--paper); box-shadow: 0 4px 0 rgba(0,0,0,.1); font-size: 15px; font-weight: 600; scroll-snap-align: start; border: 4px solid transparent; }
 .tcard.sel { border-color: var(--sun); background: #fff8d6; transform: translateY(-2px); }
 .tcard .badge { width: 58px; height: 58px; }
@@ -280,3 +282,4 @@ table.standings { border-collapse: collapse; width: 100%; font-size: 16px; font-
 @media (prefers-reduced-motion: reduce) {
   .roll-ball, .clouds span, .btn-giant, .mascot .arm, .mascot .body-bob, .banner.goal { animation: none; }
 }
+.scroll h3 small { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 15px; }
