@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#2f7fd1"/><stop offset="1" stop-color="#0b2a4a"/></radialGradient>
+    <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4cae45"/><stop offset="1" stop-color="#2f8a34"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="0" fill="url(#bg)"/>
+  <path d="M0 360 Q256 300 512 360 L512 512 L0 512 Z" fill="url(#gr)"/>
+  <circle cx="256" cy="230" r="120" fill="#fff" stroke="#111" stroke-width="10"/>
+  <polygon points="256,160 300,192 284,244 228,244 212,192" fill="#111"/>
+  <polygon points="150,220 182,200 198,240 180,280 146,270" fill="#111"/>
+  <polygon points="362,220 330,200 314,240 332,280 366,270" fill="#111"/>
+  <polygon points="210,330 230,300 282,300 302,330 256,348" fill="#111"/>
+  <text x="256" y="460" text-anchor="middle" font-family="Arial Black, Arial" font-weight="900" font-size="96" fill="#ffd23f" stroke="#7a4b00" stroke-width="6">ANDREA</text>
+  <path d="M120 90 L150 60 L180 90 L170 50 L200 30 L160 30 L150 0 L140 30 L100 30 L130 50 Z" fill="#ffd23f" transform="translate(240 40) scale(0.6)"/>
+</svg>
