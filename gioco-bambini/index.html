@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Il Giardino dei Giochi</title>
+<meta name="description" content="Giochi educativi per bambini dai 3 ai 7 anni: memory, conta e colori.">
+<style>
+  :root {
+    --sky: #bde7ff;
+    --grass: #8fd16a;
+    --ink: #2b2d42;
+    --card: #ffffff;
+    --pink: #ff6fa5;
+    --orange: #ff9f43;
+    --purple: #8e6cff;
+    --teal: #1fc8b4;
+    --yellow: #ffd23f;
+    --shadow: 0 6px 0 rgba(0,0,0,.15);
+    --radius: 24px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", "Baloo 2", system-ui, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(var(--sky) 0%, #e8f7ff 65%, var(--grass) 65%, #6fbf4a 100%);
+    background-attachment: fixed;
+    user-select: none;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; }
+
+  /* ---------- Barra in alto ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 12px 16px; max-width: 900px; margin: 0 auto;
+  }
+  .pill {
+    background: var(--card); border-radius: 999px; padding: 8px 16px;
+    box-shadow: var(--shadow); font-size: 1.3rem; font-weight: bold;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 52px;
+  }
+  .icon-btn { width: 52px; height: 52px; justify-content: center; padding: 0; font-size: 1.6rem; }
+  .icon-btn:active, .big-btn:active, .choice:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+
+  main { max-width: 900px; margin: 0 auto; padding: 0 16px 32px; }
+  .screen { display: none; animation: pop .35s ease; }
+  .screen.active { display: block; }
+  @keyframes pop { from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+
+  h1 {
+    text-align: center; font-size: clamp(2rem, 7vw, 3.4rem); margin: 8px 0 4px;
+    color: #fff; text-shadow: 0 4px 0 var(--purple), 0 8px 12px rgba(0,0,0,.2);
+  }
+  .subtitle { text-align: center; font-size: 1.2rem; margin: 0 0 24px; }
+
+  /* ---------- Menu ---------- */
+  .menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .big-btn {
+    border-radius: var(--radius); padding: 24px 16px; box-shadow: var(--shadow);
+    color: #fff; font-size: 1.6rem; font-weight: bold; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    transition: transform .1s;
+  }
+  .big-btn .emoji { font-size: 4rem; line-height: 1; }
+  .big-btn small { font-size: 1rem; font-weight: normal; opacity: .95; }
+  .bg-pink { background: var(--pink); }
+  .bg-orange { background: var(--orange); }
+  .bg-teal { background: var(--teal); }
+  .bg-purple { background: var(--purple); }
+
+  /* ---------- Fumetto istruzioni ---------- */
+  .prompt {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px 20px; font-size: clamp(1.3rem, 4.5vw, 1.9rem); font-weight: bold;
+    text-align: center; margin: 8px auto 20px; max-width: 640px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .prompt button { background: var(--yellow); border-radius: 50%; width: 44px; height: 44px; font-size: 1.3rem; flex: none; }
+
+  /* ---------- Memory ---------- */
+  .memory-grid { display: grid; gap: 12px; margin: 0 auto; max-width: 640px; }
+  .mcard {
+    aspect-ratio: 1; perspective: 600px; background: none; padding: 0;
+  }
+  .mcard-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform .4s; transform-style: preserve-3d;
+  }
+  .mcard.flipped .mcard-inner, .mcard.matched .mcard-inner { transform: rotateY(180deg); }
+  .mcard-face {
+    position: absolute; inset: 0; border-radius: 18px; backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow);
+    font-size: clamp(2rem, 9vw, 3.6rem);
+  }
+  .mcard-back { background: repeating-linear-gradient(45deg, var(--purple) 0 12px, #a48bff 12px 24px); color: #fff; }
+  .mcard-front { background: var(--card); transform: rotateY(180deg); }
+  .mcard.matched .mcard-front { background: #e6ffd9; animation: bounce .5s; }
+  @keyframes bounce { 50% { transform: rotateY(180deg) scale(1.12); } }
+
+  /* ---------- Conta ---------- */
+  .count-area {
+    background: rgba(255,255,255,.75); border-radius: var(--radius); box-shadow: var(--shadow);
+    min-height: 200px; padding: 16px; display: flex; flex-wrap: wrap; justify-content: center;
+    align-content: center; gap: 8px; max-width: 640px; margin: 0 auto 24px;
+    font-size: clamp(2.4rem, 10vw, 3.6rem);
+  }
+  .count-area span { animation: pop .3s ease both; cursor: pointer; transition: transform .15s; }
+  .count-area span.counted { transform: scale(1.25); filter: drop-shadow(0 0 6px var(--yellow)); }
+  .choices { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .choice {
+    width: 96px; height: 96px; border-radius: 50%; font-size: 2.8rem; font-weight: bold;
+    background: var(--card); box-shadow: var(--shadow); transition: transform .1s;
+  }
+  .choice.wrong { animation: shake .4s; background: #ffd6d6; }
+  .choice.right { background: #c8f7b0; }
+  @keyframes shake { 25% { transform: translateX(-8px) } 75% { transform: translateX(8px) } }
+
+  /* ---------- Colori e forme ---------- */
+  .shapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 520px; margin: 0 auto; }
+  .shape-btn {
+    aspect-ratio: 1; background: rgba(255,255,255,.8); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14%; transition: transform .1s;
+  }
+  .shape-btn svg { width: 100%; height: 100%; display: block; }
+  .shape-btn.wrong { animation: shake .4s; }
+  .shape-btn.right { background: #c8f7b0; transform: scale(1.06); }
+
+  /* ---------- Piano musicale ---------- */
+  .piano { display: flex; justify-content: center; gap: 6px; max-width: 700px; margin: 0 auto; height: 260px; }
+  .key {
+    flex: 1; border-radius: 0 0 18px 18px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+    padding-bottom: 12px; font-size: clamp(1.4rem, 5vw, 2.2rem); color: #fff; font-weight: bold;
+    transition: transform .08s, filter .08s;
+  }
+  .key small { font-size: .9rem; }
+  .key.playing { transform: translateY(6px) scaleY(.97); filter: brightness(1.2); }
+  .notes-fly { position: fixed; pointer-events: none; font-size: 2.4rem; animation: fly 1.2s ease-out forwards; }
+  @keyframes fly { to { transform: translateY(-160px) rotate(25deg); opacity: 0; } }
+
+  /* ---------- Premio ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(43,45,66,.55); display: none;
+    align-items: center; justify-content: center; padding: 16px; z-index: 10;
+  }
+  .overlay.show { display: flex; }
+  .reward {
+    background: var(--card); border-radius: 32px; padding: 28px 24px; text-align: center;
+    max-width: 420px; width: 100%; box-shadow: 0 10px 0 rgba(0,0,0,.2); animation: pop .4s ease;
+  }
+  .reward .big { font-size: 5rem; line-height: 1.1; animation: spin 1.2s ease; }
+  @keyframes spin { from { transform: rotate(-30deg) scale(.3) } to { transform: rotate(0) scale(1) } }
+  .reward h2 { font-size: 2.2rem; margin: 8px 0; color: var(--pink); }
+  .reward .row { display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .reward .big-btn { flex-direction: row; font-size: 1.3rem; padding: 14px 22px; }
+
+  .confetti { position: fixed; top: -20px; width: 12px; height: 18px; z-index: 11; pointer-events: none; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  .level-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+  .level-dots span { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.7); box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+  .level-dots span.done { background: var(--yellow); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="pill icon-btn" id="homeBtn" aria-label="Torna al menu" style="visibility:hidden">🏠</button>
+  <div class="pill" aria-live="polite">⭐ <span id="stars">0</span></div>
+  <button class="pill icon-btn" id="soundBtn" aria-label="Audio acceso/spento">🔊</button>
+</header>
+
+<main>
+  <!-- MENU -->
+  <section class="screen active" id="menu">
+    <h1>Il Giardino dei Giochi</h1>
+    <p class="subtitle">Scegli un gioco e raccogli tante stelle! ⭐</p>
+    <div class="menu">
+      <button class="big-btn bg-pink" data-game="memory"><span class="emoji">🐶</span>Memory<small>Trova le coppie di animali</small></button>
+      <button class="big-btn bg-orange" data-game="count"><span class="emoji">🍎</span>Contiamo!<small>Quanti oggetti vedi?</small></button>
+      <button class="big-btn bg-teal" data-game="colors"><span class="emoji">🔺</span>Colori e forme<small>Tocca quella giusta</small></button>
+      <button class="big-btn bg-purple" data-game="piano"><span class="emoji">🎹</span>Piano magico<small>Suona e divertiti</small></button>
+    </div>
+  </section>
+
+  <!-- MEMORY -->
+  <section class="screen" id="memory">
+    <div class="level-dots" id="memoryDots"></div>
+    <div class="prompt"><span id="memoryPrompt">Trova le coppie uguali!</span></div>
+    <div class="memory-grid" id="memoryGrid"></div>
+  </section>
+
+  <!-- CONTA -->
+  <section class="screen" id="count">
+    <div class="level-dots" id="countDots"></div>
+    <div class="prompt"><span id="countPrompt">Quanti sono?</span><button id="countSpeak" aria-label="Ripeti">🔈</button></div>
+    <div class="count-area" id="countArea"></div>
+    <div class="choices" id="countChoices"></div>
+  </section>
+
+  <!-- COLORI E FORME -->
+  <section class="screen" id="colors">
+    <div class="level-dots" id="colorsDots"></div>
+    <div class="prompt"><span id="colorsPrompt"></span><button id="colorsSpeak" aria-label="Ripeti">🔈</button></div>
+    <div class="shapes" id="shapes"></div>
+  </section>
+
+  <!-- PIANO -->
+  <section class="screen" id="piano">
+    <div class="prompt"><span>Tocca i tasti colorati! 🎶</span></div>
+    <div class="piano" id="pianoKeys"></div>
+  </section>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="reward">
+    <div class="big" id="rewardEmoji">🏆</div>
+    <h2 id="rewardTitle">Bravissimo!</h2>
+    <p id="rewardText" style="font-size:1.2rem"></p>
+    <div class="row">
+      <button class="big-btn bg-teal" id="againBtn">🔁 Ancora</button>
+      <button class="big-btn bg-purple" id="menuBtn">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ================= Utilità =================
+  const $ = (s) => document.querySelector(s);
+  const rand = (n) => Math.floor(Math.random() * n);
+  const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pick = (a) => a[rand(a.length)];
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('giardino.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('giardino.' + k, JSON.stringify(v)); } catch {} }
+  };
+
+  // ================= Stelle =================
+  let stars = store.get('stars', 0);
+  const starsEl = $('#stars');
+  starsEl.textContent = stars;
+  function addStars(n) {
+    stars += n; store.set('stars', stars); starsEl.textContent = stars;
+    starsEl.parentElement.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 400 });
+  }
+
+  // ================= Audio =================
+  let soundOn = store.get('sound', true);
+  const soundBtn = $('#soundBtn');
+  const renderSound = () => { soundBtn.textContent = soundOn ? '🔊' : '🔇'; };
+  renderSound();
+  soundBtn.onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); renderSound(); if (!soundOn) speechSynthesis?.cancel(); };
+
+  let ctx = null;
+  function audio() {
+    if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur = 0.2, type = 'sine', when = 0, vol = 0.25) {
+    if (!soundOn) return;
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + when;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    flip: () => tone(660, 0.08, 'triangle'),
+    good: () => { tone(523, .15, 'triangle'); tone(659, .15, 'triangle', .1); tone(784, .25, 'triangle', .2); },
+    bad: () => { tone(220, .18, 'sawtooth', 0, .12); tone(180, .25, 'sawtooth', .12, .12); },
+    win: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .22, 'square', i * .12, .12)),
+    pop: (n) => tone(400 + n * 60, .1, 'sine'),
+  };
+
+  // Voce in italiano (aiuta chi non sa ancora leggere)
+  let itVoice = null;
+  function loadVoice() {
+    const vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+    itVoice = vs.find(v => v.lang && v.lang.toLowerCase().startsWith('it')) || null;
+  }
+  if (window.speechSynthesis) { loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; }
+  function say(text) {
+    if (!soundOn || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[^\p{L}\p{N}\s!?,.']/gu, ''));
+    u.lang = 'it-IT'; if (itVoice) u.voice = itVoice;
+    u.rate = 0.9; u.pitch = 1.2;
+    speechSynthesis.speak(u);
+  }
+
+  // ================= Navigazione =================
+  const homeBtn = $('#homeBtn');
+  let current = 'menu';
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    homeBtn.style.visibility = id === 'menu' ? 'hidden' : 'visible';
+    current = id;
+    window.scrollTo(0, 0);
+  }
+  homeBtn.onclick = () => { speechSynthesis?.cancel(); show('menu'); };
+  document.querySelectorAll('[data-game]').forEach(b => b.onclick = () => { audio(); games[b.dataset.game].start(); });
+
+  function dots(el, total, done) {
+    el.innerHTML = '';
+    for (let i = 0; i < total; i++) { const d = document.createElement('span'); if (i < done) d.className = 'done'; el.appendChild(d); }
+  }
+
+  // ================= Premio finale =================
+  const overlay = $('#overlay');
+  let againFn = null;
+  function reward(title, text, earned) {
+    sfx.win(); confetti(); addStars(earned);
+    $('#rewardEmoji').textContent = pick(['🏆', '🥇', '🌟', '🎉', '🦄', '🌈']);
+    $('#rewardTitle').textContent = title;
+    $('#rewardText').textContent = text + (earned === 1 ? ' Hai vinto 1 stella!' : ` Hai vinto ${earned} stelle!`);
+    overlay.classList.add('show');
+    setTimeout(() => say(title + ' ' + text), 300);
+  }
+  $('#againBtn').onclick = () => { overlay.classList.remove('show'); againFn && againFn(); };
+  $('#menuBtn').onclick = () => { overlay.classList.remove('show'); show('menu'); };
+
+  function confetti() {
+    const colors = ['#ff6fa5', '#ff9f43', '#1fc8b4', '#8e6cff', '#ffd23f', '#4dabf7'];
+    for (let i = 0; i < 70; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = pick(colors);
+      c.style.animationDuration = (1.8 + Math.random() * 1.8) + 's';
+      c.style.animationDelay = Math.random() * .5 + 's';
+      c.style.borderRadius = Math.random() > .5 ? '50%' : '3px';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4200);
+    }
+  }
+
+  const praise = ['Bravo!', 'Bravissimo!', 'Fantastico!', 'Che forza!', 'Super!', 'Esatto!'];
+  const retry = ['Riprova!', 'Quasi! Riprova!', 'Prova ancora!'];
+
+  // ================= Gioco 1: Memory =================
+  const ANIMALS = ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐸', '🐵', '🦁', '🐯', '🐷', '🐮', '🐔', '🐧', '🐙', '🦋'];
+  const memory = {
+    levels: [4, 6, 8],   // numero di coppie per livello
+    level: 0,
+    start() { this.level = 0; show('memory'); this.play(); },
+    play() {
+      const pairs = this.levels[this.level];
+      dots($('#memoryDots'), this.levels.length, this.level);
+      const set = shuffle(ANIMALS).slice(0, pairs);
+      const deck = shuffle([...set, ...set]);
+      const grid = $('#memoryGrid');
+      grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+      grid.innerHTML = '';
+      let open = [], found = 0, lock = false, moves = 0;
+      $('#memoryPrompt').textContent = 'Trova le coppie uguali!';
+      say('Trova le coppie uguali!');
+      deck.forEach(animal => {
+        const b = document.createElement('button');
+        b.className = 'mcard'; b.setAttribute('aria-label', 'carta coperta');
+        b.innerHTML = `<div class="mcard-inner"><div class="mcard-face mcard-back">?</div><div class="mcard-face mcard-front">${animal}</div></div>`;
+        b.onclick = () => {
+          if (lock || b.classList.contains('flipped') || b.classList.contains('matched')) return;
+          sfx.flip(); b.classList.add('flipped'); open.push({ b, animal });
+          if (open.length < 2) return;
+          moves++; lock = true;
+          const [x, y] = open;
+          if (x.animal === y.animal) {
+            setTimeout(() => {
+              x.b.classList.add('matched'); y.b.classList.add('matched');
+              sfx.good(); open = []; lock = false; found++;
+              $('#memoryPrompt').textContent = pick(praise) + ' ' + animal;
+              if (found === pairs) this.next(moves, pairs);
+            }, 350);
+          } else {
+            setTimeout(() => { x.b.classList.remove('flipped'); y.b.classList.remove('flipped'); open = []; lock = false; }, 900);
+          }
+        };
+        grid.appendChild(b);
+      });
+    },
+    next(moves, pairs) {
+      const earned = moves <= pairs + 2 ? 3 : moves <= pairs * 2 ? 2 : 1;
+      if (this.level < this.levels.length - 1) {
+        againFn = () => { this.level++; this.play(); };
+        reward('Bravissimo!', 'Hai trovato tutte le coppie!', earned);
+        $('#againBtn').textContent = '➡️ Avanti';
+      } else {
+        againFn = () => this.start();
+        reward('Campione del Memory!', 'Hai finito tutti i livelli!', earned + 2);
+        $('#againBtn').textContent = '🔁 Ancora';
+      }
+    }
+  };
+
+  // ================= Gioco 2: Contiamo =================
+  const THINGS = [
+    ['🍎', 'mele'], ['🍌', 'banane'], ['⭐', 'stelle'], ['🐞', 'coccinelle'], ['🎈', 'palloncini'],
+    ['🐟', 'pesciolini'], ['🌸', 'fiori'], ['🚗', 'macchinine'], ['🍓', 'fragole'], ['🦆', 'paperelle']
+  ];
+  const NUM_WORDS = ['zero', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove', 'dieci'];
+  const count = {
+    rounds: 6, round: 0, mistakes: 0, phrase: '',
+    start() { this.round = 0; this.mistakes = 0; show('count'); this.play(); },
+    play() {
+      dots($('#countDots'), this.rounds, this.round);
+      const max = this.round < 3 ? 5 : 10;
+      const n = 1 + rand(max);
+      const [emoji, name] = pick(THINGS);
+      this.phrase = `Quante ${name} vedi?`;
+      // "pesciolini", "fiori", "palloncini" sono maschili
+      if (['pesciolini', 'fiori', 'palloncini'].includes(name)) this.phrase = `Quanti ${name} vedi?`;
+      $('#countPrompt').textContent = this.phrase;
+      say(this.phrase);
+
+      const area = $('#countArea'); area.innerHTML = '';
+      let tapped = 0;
+      for (let i = 0; i < n; i++) {
+        const s = document.createElement('span');
+        s.textContent = emoji; s.style.animationDelay = (i * 0.07) + 's';
+        // Tocca gli oggetti per contarli ad alta voce
+        s.onclick = () => {
+          if (s.classList.contains('counted')) return;
+          s.classList.add('counted'); tapped++; sfx.pop(tapped); say(NUM_WORDS[tapped]);
+        };
+        area.appendChild(s);
+      }
+
+      const opts = new Set([n]);
+      while (opts.size < 3) { const o = n + (rand(5) - 2); if (o >= 1 && o <= 10) opts.add(o); }
+      const box = $('#countChoices'); box.innerHTML = '';
+      let done = false;
+      shuffle([...opts]).forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'choice'; b.textContent = o; b.setAttribute('aria-label', NUM_WORDS[o]);
+        b.onclick = () => {
+          if (done) return;
+          if (o === n) {
+            done = true; b.classList.add('right'); sfx.good();
+            const p = pick(praise); $('#countPrompt').textContent = `${p} Sono ${n}!`; say(`${p} Sono ${NUM_WORDS[n]}!`);
+            setTimeout(() => this.next(), 1500);
+          } else {
+            this.mistakes++; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong');
+            sfx.bad(); say(pick(retry) + ' Tocca gli oggetti per contarli.');
+          }
+        };
+        box.appendChild(b);
+      });
+    },
+    next() {
+      this.round++;
+      if (this.round < this.rounds) return this.play();
+      dots($('#countDots'), this.rounds, this.rounds);
+      const earned = this.mistakes === 0 ? 5 : this.mistakes <= 2 ? 3 : 2;
+      againFn = () => this.start();
+      $('#againBtn').textContent = '🔁 Ancora';
+      reward('Sai contare benissimo!', 'Hai risposto a tutte le domande!', earned);
+    }
+  };
+  $('#countSpeak').onclick = () => say(count.phrase);
+
+  // ================= Gioco 3: Colori e forme =================
+  const COLORS = [
+    { name: 'rosso', f: 'rossa', hex: '#ff4d4d' }, { name: 'blu', f: 'blu', hex: '#3b82f6' },
+    { name: 'giallo', f: 'gialla', hex: '#ffd23f' }, { name: 'verde', f: 'verde', hex: '#22c55e' },
+    { name: 'arancione', f: 'arancione', hex: '#ff9f43' }, { name: 'viola', f: 'viola', hex: '#8e6cff' }
+  ];
+  const SHAPES = [
+    { name: 'cerchio', g: 'm', svg: c => `<circle cx="50" cy="50" r="44" fill="${c}"/>` },
+    { name: 'quadrato', g: 'm', svg: c => `<rect x="8" y="8" width="84" height="84" rx="8" fill="${c}"/>` },
+    { name: 'triangolo', g: 'm', svg: c => `<polygon points="50,6 95,92 5,92" fill="${c}" stroke-linejoin="round"/>` },
+    { name: 'stella', g: 'f', svg: c => `<polygon points="50,4 62,38 98,38 69,59 80,94 50,73 20,94 31,59 2,38 38,38" fill="${c}"/>` },
+    { name: 'cuore', g: 'm', svg: c => `<path d="M50 90 C10 62 2 40 14 22 C26 6 46 12 50 28 C54 12 74 6 86 22 C98 40 90 62 50 90Z" fill="${c}"/>` },
+    { name: 'rombo', g: 'm', svg: c => `<polygon points="50,4 94,50 50,96 6,50" fill="${c}"/>` }
+  ];
+  const colors = {
+    rounds: 8, round: 0, mistakes: 0, phrase: '',
+    start() { this.round = 0; this.mistakes = 0; show('colors'); this.play(); },
+    play() {
+      dots($('#colorsDots'), this.rounds, this.round);
+      // Primi turni: solo il colore. Poi: colore + forma.
+      const hard = this.round >= 4;
+      const target = { c: pick(COLORS), s: pick(SHAPES) };
+      const items = [target];
+      const key = (it) => it.c.name + '|' + it.s.name;
+      const used = new Set([key(target)]);
+      let guard = 0;
+      while (items.length < 6 && guard++ < 500) {
+        const it = { c: pick(COLORS), s: pick(SHAPES) };
+        if (used.has(key(it))) continue;
+        // modalità facile: nessun altro oggetto con lo stesso colore
+        if (!hard && it.c.name === target.c.name) continue;
+        used.add(key(it)); items.push(it);
+      }
+      const isTarget = (it) => hard ? (it.c === target.c && it.s === target.s) : it.c === target.c;
+      if (hard) {
+        const art = target.s.g === 'f' ? 'la' : 'il';
+        const adj = target.s.g === 'f' ? target.c.f : target.c.name;
+        this.phrase = `Tocca ${art} ${target.s.name} ${adj}!`;
+      } else {
+        this.phrase = `Tocca il colore ${target.c.name}!`;
+      }
+      $('#colorsPrompt').innerHTML = this.phrase.replace(target.c.name, `<span style="color:${target.c.hex};text-shadow:0 2px 0 rgba(0,0,0,.25)">${target.c.name}</span>`);
+      say(this.phrase);
+
+      const box = $('#shapes'); box.innerHTML = '';
+      let done = false;
+      shuffle(items).forEach(it => {
+        const b = document.createElement('button');
+        b.className = 'shape-btn';
+        b.setAttribute('aria-label', `${it.s.name} ${it.c.name}`);
+        b.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${it.s.svg(it.c.hex)}</svg>`;
+        b.onclick = () => {
+          if (done) return;
+          if (isTarget(it)) {
+            done = true; b.classList.add('right'); sfx.good();
+            const p = pick(praise); $('#colorsPrompt').textContent = p; say(p);
+            setTimeout(() => this.next(), 1200);
+          } else {
+            this.mistakes++; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong');
+            sfx.bad(); say(`Questo è ${it.s.g === 'f' ? 'una' : 'un'} ${it.s.name} ${it.s.g === 'f' ? it.c.f : it.c.name}. ${pick(retry)}`);
+          }
+        };
+        box.appendChild(b);
+      });
+    },
+    next() {
+      this.round++;
+      if (this.round < this.rounds) return this.play();
+      dots($('#colorsDots'), this.rounds, this.rounds);
+      const earned = this.mistakes === 0 ? 5 : this.mistakes <= 3 ? 3 : 2;
+      againFn = () => this.start();
+      $('#againBtn').textContent = '🔁 Ancora';
+      reward('Che occhio!', 'Conosci tutti i colori e le forme!', earned);
+    }
+  };
+  $('#colorsSpeak').onclick = () => say(colors.phrase);
+
+  // ================= Gioco 4: Piano magico =================
+  const KEYS = [
+    { n: 'Do', f: 261.63, c: '#ff4d4d', e: '🐱' }, { n: 'Re', f: 293.66, c: '#ff9f43', e: '🐶' },
+    { n: 'Mi', f: 329.63, c: '#ffd23f', e: '🐤' }, { n: 'Fa', f: 349.23, c: '#22c55e', e: '🐸' },
+    { n: 'Sol', f: 392.0, c: '#1fc8b4', e: '🐳' }, { n: 'La', f: 440.0, c: '#3b82f6', e: '🦋' },
+    { n: 'Si', f: 493.88, c: '#8e6cff', e: '🦄' }, { n: 'Do', f: 523.25, c: '#ff6fa5', e: '🐰' }
+  ];
+  const piano = {
+    built: false,
+    start() {
+      show('piano');
+      if (this.built) return;
+      this.built = true;
+      const wrap = $('#pianoKeys');
+      KEYS.forEach(k => {
+        const b = document.createElement('button');
+        b.className = 'key'; b.style.background = k.c;
+        b.innerHTML = `<span>${k.e}</span><small>${k.n}</small>`;
+        b.setAttribute('aria-label', 'nota ' + k.n);
+        const play = (ev) => {
+          ev.preventDefault();
+          tone(k.f, 0.6, 'triangle', 0, 0.3);
+          b.classList.add('playing'); setTimeout(() => b.classList.remove('playing'), 150);
+          const r = b.getBoundingClientRect();
+          const n = document.createElement('div');
+          n.className = 'notes-fly'; n.textContent = pick(['🎵', '🎶', k.e]);
+          n.style.left = (r.left + r.width / 2 - 18) + 'px'; n.style.top = (r.top + 10) + 'px';
+          document.body.appendChild(n); setTimeout(() => n.remove(), 1200);
+        };
+        b.addEventListener('pointerdown', play);
+        wrap.appendChild(b);
+      });
+    }
+  };
+
+  const games = { memory, count, colors, piano };
+})();
+</script>
+</body>
+</html>
