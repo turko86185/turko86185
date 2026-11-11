@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Andrea Football Champions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1e7a3c">
+<meta name="description" content="Il videogioco di calcio 3D di Andrea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Andrea FC">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+
+  <!-- CARICAMENTO -->
+  <section id="scr-loading" class="screen active">
+    <div class="loading-ball"></div>
+    <p class="loading-text">Preparo lo stadio…</p>
+  </section>
+
+  <!-- BENVENUTO -->
+  <section id="scr-welcome" class="screen sky">
+    <div class="clouds"><span></span><span></span><span></span></div>
+    <div class="welcome-grass"></div>
+    <div class="roll-ball" aria-hidden="true"></div>
+    <div class="welcome-wrap">
+      <div class="mascot big" id="mascotBig"></div>
+      <div class="bubble" id="welcomeBubble"></div>
+    </div>
+    <h1 class="logo">ANDREA<span>FOOTBALL CHAMPIONS</span></h1>
+    <button class="btn-giant" id="btnPlay">GIOCHIAMO!</button>
+  </section>
+
+  <!-- MENU PRINCIPALE -->
+  <section id="scr-menu" class="screen sky">
+    <div class="welcome-grass"></div>
+    <header class="menu-top">
+      <div class="mascot small" id="mascotSmall"></div>
+      <div class="bubble small" id="menuBubble">Bentornato Andrea!</div>
+      <div class="stars-pill"><span class="star-ico"></span><b id="starCount">0</b></div>
+    </header>
+    <nav class="menu-grid">
+      <button class="mbtn hero" data-go="playnow"><i class="ico ico-play"></i>GIOCA ORA</button>
+      <button class="mbtn c1" data-go="quick"><i class="ico ico-ball"></i>PARTITA VELOCE</button>
+      <button class="mbtn c2" data-go="league"><i class="ico ico-table"></i>CAMPIONATO</button>
+      <button class="mbtn c3" data-go="penalty"><i class="ico ico-goal"></i>CALCI DI RIGORE</button>
+      <button class="mbtn c4" data-go="training"><i class="ico ico-cone"></i>ALLENAMENTO</button>
+      <button class="mbtn c5" data-go="trophies"><i class="ico ico-cup"></i>LE MIE COPPE</button>
+      <button class="mbtn c6" data-go="team"><i class="ico ico-shirt"></i>SCEGLI LA SQUADRA</button>
+      <button class="mbtn c7" data-go="settings"><i class="ico ico-gear"></i>IMPOSTAZIONI</button>
+    </nav>
+  </section>
+
+  <!-- PARTITA VELOCE -->
+  <section id="scr-quick" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Partita veloce</h2></header>
+    <div class="scroll">
+      <h3>La tua squadra</h3>
+      <div class="team-picker" id="pickHome"></div>
+      <h3>Avversario</h3>
+      <div class="team-picker" id="pickAway"></div>
+      <h3>Stadio</h3>
+      <div class="chips" id="chipStadium"></div>
+      <h3>Durata</h3>
+      <div class="chips" id="chipDuration"></div>
+      <h3>Difficoltà</h3>
+      <div class="chips" id="chipDiff"></div>
+      <div class="cta-row"><button class="btn-go" id="btnQuickGo">SCENDI IN CAMPO!</button></div>
+    </div>
+  </section>
+
+  <!-- SCEGLI LA SQUADRA -->
+  <section id="scr-team" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Scegli la squadra</h2></header>
+    <div class="scroll">
+      <div class="team-hero">
+        <canvas id="kitPreview" width="220" height="220"></canvas>
+        <div>
+          <div id="teamHeroName" class="team-hero-name"></div>
+          <h3>Divisa</h3>
+          <div class="chips" id="chipKit"></div>
+        </div>
+      </div>
+      <h3>Squadra del cuore</h3>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+  </section>
+
+  <!-- CAMPIONATO -->
+  <section id="scr-league" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Campionato <small id="seasonLbl"></small></h2></header>
+    <div class="scroll" id="leagueBody"></div>
+  </section>
+
+  <!-- RIGORI -->
+  <section id="scr-penalty" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Calci di rigore</h2></header>
+    <div class="scroll">
+      <p class="lead">Tira 5 rigori e para quelli degli avversari. Vince chi segna di più!</p>
+      <h3>Contro chi giochi?</h3>
+      <div class="team-picker" id="pickPen"></div>
+      <div class="cta-row"><button class="btn-go" id="btnPenGo">AI RIGORI!</button></div>
+    </div>
+  </section>
+
+  <!-- ALLENAMENTO -->
+  <section id="scr-training" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Allenamento</h2></header>
+    <div class="scroll"><div class="drill-grid" id="drillGrid"></div></div>
+  </section>
+
+  <!-- COPPE -->
+  <section id="scr-trophies" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Le mie coppe</h2></header>
+    <div class="scroll" id="trophyBody"></div>
+  </section>
+
+  <!-- IMPOSTAZIONI -->
+  <section id="scr-settings" class="screen panel-screen">
+    <header class="bar"><button class="back" data-back>‹</button><h2>Impostazioni</h2></header>
+    <div class="scroll" id="settingsBody"></div>
+  </section>
+
+  <!-- GIOCO -->
+  <section id="scr-game" class="screen game">
+    <div class="hud-top">
+      <button class="pause-btn" id="btnPause" aria-label="Pausa"><i></i><i></i></button>
+      <div class="scorebox" id="scorebox">
+        <span class="sb-team" id="sbHome">AND</span>
+        <span class="sb-score" id="sbScore">0 - 0</span>
+        <span class="sb-team" id="sbAway">CPU</span>
+        <span class="sb-clock" id="sbClock">0'</span>
+      </div>
+      <div class="pens" id="pens"></div>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="comment" id="comment"></div>
+    <div class="hint" id="hint"></div>
+    <div class="replay-tag" id="replayTag">REPLAY <small>tocca per saltare</small></div>
+    <div class="power" id="power"><div id="powerFill"></div></div>
+    <div id="joyZone"><div id="joy"><div id="joyKnob"></div></div><span class="joy-hint">muoviti</span></div>
+    <div class="btns" id="btns">
+      <button class="gbtn shoot" id="btnShoot"><span>TIRA</span></button>
+      <button class="gbtn pass" id="btnPass"><span>PASSA</span></button>
+      <button class="gbtn sprint" id="btnSprint"><span>SCATTO</span></button>
+      <button class="gbtn swap" id="btnSwitch"><span>CAMBIO</span></button>
+    </div>
+    <div class="dive" id="dive">
+      <button data-dive="-1" aria-label="Tuffo a sinistra">◀</button>
+      <button data-dive="0" aria-label="Resta al centro">▲</button>
+      <button data-dive="1" aria-label="Tuffo a destra">▶</button>
+    </div>
+  </section>
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="ovPause">
+    <div class="card">
+      <h2>Pausa</h2>
+      <button class="btn-go" id="btnResume">RIPRENDI</button>
+      <button class="btn-soft" id="btnQuit">Torna al menu</button>
+    </div>
+  </div>
+  <div class="overlay" id="ovResult">
+    <div class="card result" id="resultCard"></div>
+  </div>
+  <div class="overlay" id="ovRotate">
+    <div class="card">
+      <div class="rotate-ico"></div>
+      <h2>Gira il telefono!</h2>
+      <p>Si gioca meglio in orizzontale.</p>
+      <button class="btn-soft" id="btnRotateOk">Gioca così</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
