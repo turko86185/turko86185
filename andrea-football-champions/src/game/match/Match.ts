@@ -344,6 +344,7 @@ export class Match {
     this.aiPenaltyPlan = plan;
     // il portiere guarda verso -X: la sinistra del portiere è +Z
     if (this.keeperAI) this.keeperAI.forcedSide = (side === 0 ? 0 : (side === -1 ? 1 : -1)) as -1 | 0 | 1;
+    if (this.keeperAI) this.keeperAI.forcedSaveChance = 0.9 - this.cfg.difficulty * 0.35;
     this.kick(c, plan);
   }
 

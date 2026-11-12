@@ -20,6 +20,7 @@ export class GoalkeeperAI {
   crossing: Vector3 | null = null;
   /** forzatura (rigori dell'avversario: la direzione la sceglie Andrea) */
   forcedSide: -1 | 0 | 1 | null = null;
+  forcedSaveChance = 0.85;
 
   constructor(public p: Player, public difficulty: number, public goalX = GOAL.x) {
     p.maxSpeed = 4;
@@ -56,15 +57,15 @@ export class GoalkeeperAI {
     const d = this.difficulty;
     const reaction = 0.28 - 0.14 * d;
     const time = Math.max(0.05, c.t - reaction);
-    const diveReach = 1.0 + 1.6 * d; // metri coperti col tuffo
+    const diveReach = 1.0 + 1.9 * d; // metri coperti col tuffo
     const handReach = 0.9 + (y > 1.6 ? -0.2 : 0);
     const needed = Math.max(0, Math.abs(dz) - handReach);
     const canReach = needed <= diveReach * Math.min(1, time / 0.45) && y < 2.35;
     const central = Math.abs(dz) < 0.8 && y < 1.7;
-    const chance = central ? 0.3 + 0.55 * d : 0.15 + 0.6 * d;
+    const chance = central ? 0.3 + 0.62 * d : 0.15 + 0.7 * d;
     if (this.forcedSide !== null) {
       const ballSide = Math.abs(c.point.z) < 1.0 ? 0 : Math.sign(c.point.z);
-      this.willSave = inFrame && this.forcedSide === ballSide && rnd() < 0.85;
+      this.willSave = inFrame && this.forcedSide === ballSide && rnd() < this.forcedSaveChance;
     } else this.willSave = inFrame && canReach && rnd() < chance;
     this.catches = this.willSave && (central || plan.v0.length() < 18) && rnd() < 0.6;
     this.reactAt = reaction;

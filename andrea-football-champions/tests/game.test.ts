@@ -202,6 +202,13 @@ describe('Difficoltà Facile / Medio / Difficile', () => {
     expect(d.difficulty).toBeGreaterThan(m.difficulty);
     expect(f.assist).toBeGreaterThanOrEqual(m.assist);
     expect(d.assist).toBeLessThan(m.assist);
-    expect(d.difficulty).toBeLessThanOrEqual(0.95);
+    expect(d.difficulty).toBeLessThanOrEqual(1);
+    expect(d.scenario.keeper).toBe(true);
+    expect(d.scenario.defenders.length).toBe(cfg.scenario.defenders.length + 1);
+    // anche al livello 1, Medio e Difficile hanno il portiere
+    const l1 = new LevelSession(LEVELS[2], 'roma', 'casa').nextConfig();
+    expect(l1.scenario.keeper).toBe(false);
+    expect(applyDifficulty(l1, 'medio').scenario.keeper).toBe(true);
+    expect(applyDifficulty(l1, 'difficile').difficulty).toBeGreaterThanOrEqual(0.75);
   });
 });

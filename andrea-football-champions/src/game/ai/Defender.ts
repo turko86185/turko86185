@@ -14,7 +14,7 @@ export class DefenderAI {
   reachH = 1.25;
 
   constructor(public p: Player, public difficulty: number) {
-    p.maxSpeed = 3.2 + 3.2 * difficulty;
+    p.maxSpeed = 3.2 + 4 * difficulty;
     p.facing = Math.PI;
   }
 
@@ -37,8 +37,8 @@ export class DefenderAI {
     this.willIntercept = false;
     this.interceptPoint = null;
     const n = 30;
-    const reaction = 0.35 - 0.15 * this.difficulty;
-    const reach = 0.7 + 0.3 * this.difficulty;
+    const reaction = 0.35 - 0.25 * this.difficulty;
+    const reach = 0.7 + 0.8 * this.difficulty;
     let best: { t: number; p: Vector3; slack: number } | null = null;
     for (let i = 2; i <= n; i++) {
       const t = (plan.T * i) / n;
@@ -49,7 +49,7 @@ export class DefenderAI {
       const slack = can - dist;
       if (bp.y < this.reachH && slack > 0 && (!best || t < best.t)) best = { t, p: bp, slack };
     }
-    const chance = 0.06 + 0.5 * this.difficulty;
+    const chance = 0.06 + 0.7 * this.difficulty;
     if (best && rnd() < chance) {
       this.willIntercept = true;
       this.interceptPoint = best.p.setY(0);
@@ -66,11 +66,11 @@ export class DefenderAI {
   /** Inseguimento di un pallone libero */
   chase(ball: Vector3, factor = 1) {
     this.p.target = ball.clone().setY(0);
-    this.p.maxSpeed = (3.2 + 3.2 * this.difficulty) * factor;
+    this.p.maxSpeed = (3.2 + 4 * this.difficulty) * factor;
   }
 
   canTouch(ball: Vector3): boolean {
     const d = Math.hypot(ball.x - this.p.pos.x, ball.z - this.p.pos.z);
-    return d < 0.95 && ball.y < this.reachH;
+    return d < 0.95 + 0.5 * this.difficulty && ball.y < this.reachH;
   }
 }

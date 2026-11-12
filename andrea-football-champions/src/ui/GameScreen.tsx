@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Engine } from '../game/engine/Engine';
 import { Match, type Outcome } from '../game/match/Match';
 import { InputDrawer } from '../game/trajectory/InputDrawer';
-import { applyDifficulty, type Session, type SessionResult } from '../game/match/sessions';
+import { applyDifficulty, setDifficultyLevel, type Session, type SessionResult } from '../game/match/sessions';
 import { Audio } from '../game/audio/AudioManager';
 import { Save } from '../game/save/SaveManager';
 import { BALLS } from '../game/save/rewards';
@@ -25,6 +25,7 @@ export function GameScreen({ engine, session, onEnd, onQuit }: { engine: Engine;
   pausedRef.current = paused;
 
   useEffect(() => {
+    setDifficultyLevel(Save.data.settings.difficulty ?? 'facile');
     const ball = BALLS.find((b) => b.id === Save.data.ballId) ?? BALLS[0];
     let bannerTimer = 0;
     const showBanner = (text: string, kind = 'info') => {

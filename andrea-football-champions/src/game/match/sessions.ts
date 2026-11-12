@@ -153,7 +153,7 @@ export function randomAttack(rnd = Math.random, d = 0.3): Scenario {
 
 /** Simula un attacco avversario (risultato testuale, divertente ma raro) */
 export function simulateOpponentAttack(home: Team, away: Team, rnd = Math.random): { goal: boolean; text: string } {
-  const p = 0.12 + Math.max(0, away.strength - 2) * 0.04;
+  const p = OPP_BOOST[currentLevel] + Math.max(0, away.strength - 2) * 0.04;
   const goal = rnd() < p;
   const name = away.players.fw[Math.floor(rnd() * 3)];
   if (goal) return { goal, text: `Attacco ${away.name}... gol di ${name}. Non mollare Andrea!` };
@@ -359,14 +359,30 @@ export function standings(st: ChampionshipState) {
   return Object.entries(st.table).sort(([, a], [, b]) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf).map(([id, r]) => ({ id, ...r }));
 }
 
+/** Difficoltà corrente (impostata dalla schermata di gioco) */
+let currentLevel: Difficulty = 'facile';
+export function setDifficultyLevel(l: Difficulty) { currentLevel = l; }
+const OPP_BOOST: Record<Difficulty, number> = { facile: 0.08, medio: 0.18, difficile: 0.3 };
+
 /**
- * Difficoltà scelta da Andrea: modifica portiere e difensori (difficulty) e aiuto ai tiri (assist).
- *  - facile: portieri e difensori molto morbidi, aiuto massimo
- *  - medio: come progettato nei livelli
- *  - difficile: avversari più svegli, meno aiuto
+ * Difficoltà scelta da Andrea: modifica portiere e difensori (difficulty), aiuto ai tiri (assist)
+ * e, a Medio e Difficile, aggiunge il portiere e un difensore in più.
  */
 export function applyDifficulty(cfg: MatchConfig, level: Difficulty): MatchConfig {
-  if (level === 'facile') return { ...cfg, difficulty: cfg.difficulty * 0.5, assist: Math.max(cfg.assist, 0.9) };
-  if (level === 'difficile') return { ...cfg, difficulty: Math.min(0.95, cfg.difficulty * 1.4 + 0.25), assist: Math.max(0.2, cfg.assist * 0.55), hint: false };
-  return cfg;
+  const d = cfg.difficulty;
+  const sc = { ...cfg.scenario, attackers: cfg.scenario.attackers.slice(), defenders: cfg.scenario.defenders.slice() };
+  const normal = cfg.mode === 'normal';
+  if (level === 'facile') {
+    return { ...cfg, difficulty: Math.min(1, d * 0.9 + 0.25), assist: Math.max(0.7, Math.min(cfg.assist, 0.85)) };
+  }
+  if (normal) sc.keeper = true;
+  if (level === 'medio') {
+    return { ...cfg, scenario: sc, difficulty: Math.min(1, d + 0.4), assist: Math.min(cfg.assist, 0.5) };
+  }
+  // difficile: un difensore in più tra il portatore e la porta
+  if (normal && !sc.looseBall) {
+    const [ax, az] = sc.attackers[0];
+    sc.defenders.push([Math.min(46, (ax + 52.5) / 2 + 2), az * 0.5]);
+  }
+  return { ...cfg, scenario: sc, difficulty: Math.min(1, d * 0.5 + 0.75), assist: 0.1, hint: false };
 }
