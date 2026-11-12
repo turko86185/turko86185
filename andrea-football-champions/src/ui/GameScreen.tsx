@@ -72,6 +72,7 @@ export function GameScreen({ engine, session, onEnd, onQuit }: { engine: Engine;
     const drawer = new InputDrawer(drawRef.current!, engine);
     drawer.enabled = () => !pausedRef.current && m.canDraw;
     drawer.onStart = () => setHand(null);
+    drawer.onMove = (res) => m.previewPath(res.path, res.goalPoint, res.gestureSpeed);
     drawer.onDone = (res) => {
       if (!m.canDraw) return;
       const plan = m.submitPath(res.path, res.goalPoint, res.gestureSpeed);
@@ -127,25 +128,27 @@ export function GameScreen({ engine, session, onEnd, onQuit }: { engine: Engine;
     <>
       <canvas ref={drawRef} className="draw" data-testid="draw-canvas" />
       <div className="hud">
-        <div className="row" style={{ gap: 6 }}>
-          <button className="btn icon" aria-label="Pausa" onClick={() => { Audio.play('click'); setPaused(true); }}>⏸</button>
-          {hud.left && <span className="score" style={{ fontSize: 16 }}>{hud.left}</span>}
+        <div className="scoreboard" data-testid="score">
+          <span className="sb-clock">{hud.clock ?? ''}</span>
+          <span className="sb-team" style={{ background: `linear-gradient(180deg, ${session.homeTeam.colors[0]} 50%, ${session.homeTeam.colors[1]} 50%)` }}>
+            <b>{hud.scoreHome ?? 0}</b>
+          </span>
+          <span className="sb-dash">-</span>
+          <span className="sb-team" style={{ background: `linear-gradient(180deg, ${session.awayTeam.colors[0]} 50%, ${session.awayTeam.colors[1]} 50%)` }}>
+            <b>{hud.scoreAway ?? 0}</b>
+          </span>
         </div>
-        <div className="objective" data-testid="objective">
-          {hud.objective}
-          {hud.progress && <small>{hud.progress}</small>}
-        </div>
-        <div>
-          {hud.scoreHome !== undefined ? (
-            <span className="score" data-testid="score">{hud.homeShort} {hud.scoreHome} - {hud.scoreAway} {hud.awayShort}</span>
-          ) : hud.right ? <span className="score" style={{ fontSize: 16 }}>{hud.right}</span> : null}
-        </div>
+        <button className="btn icon pause" aria-label="Pausa" onClick={() => { Audio.play('click'); setPaused(true); }}>⏸</button>
+      </div>
+      <div className="objective" data-testid="objective">
+        {hud.objective}
+        {hud.progress && <small>{hud.progress}</small>}
       </div>
       {banner && <div key={banner.id} className={`banner ${banner.kind}`} data-testid="banner">{banner.text}</div>}
       {interlude && <div className="interlude" data-testid="interlude">{interlude}</div>}
       {hand && <div className="hand" style={{ left: hand.x, top: hand.y }}>👆</div>}
       {state === 'aim' && !hintOn && !interlude && !isPenaltyDefend && (
-        <div className="interlude" style={{ opacity: 0.85, fontSize: 16 }}>✍️ Disegna con il dito dove deve andare il pallone!</div>
+        <div className="interlude" style={{ opacity: 0.8, fontSize: 14, padding: '6px 12px', width: 'auto' }}>✍️ Disegna con il dito!</div>
       )}
       {isPenaltyDefend && state === 'aim' && (
         <div className="keeper-btns">

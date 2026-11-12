@@ -1,4 +1,49 @@
-import { AdditiveBlending, CatmullRomCurve3, Mesh, MeshBasicMaterial, TubeGeometry, Vector3, TorusGeometry, Group } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, DoubleSide, Mesh, MeshBasicMaterial, Shape, ShapeGeometry, TubeGeometry, Vector3, TorusGeometry, Group } from 'three';
+
+// stella del bersaglio
+const STAR_GEO = (() => {
+  const s = new Shape();
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.17 : 0.4;
+    if (i === 0) s.moveTo(Math.cos(a) * r, Math.sin(a) * r); else s.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  return new ShapeGeometry(s);
+})();
+const STAR_MAT = new MeshBasicMaterial({ color: '#ffd60a', side: DoubleSide, depthTest: false, transparent: true });
+
+/** Freccia gialla a terra lungo la traiettoria, con punta */
+function arrowRibbon(pts: Vector3[], color: string): Mesh {
+  const n = pts.length;
+  const pos: number[] = [], alpha: number[] = [], idx: number[] = [];
+  const end = n - 3;
+  for (let i = 0; i <= end; i++) {
+    const p = pts[i], q = pts[Math.min(n - 1, i + 1)];
+    const dx = q.x - p.x, dz = q.z - p.z, L = Math.hypot(dx, dz) || 1;
+    const nx = -dz / L, nz = dx / L;
+    const w = 0.12 + 0.14 * (i / end);
+    pos.push(p.x + nx * w, p.y, p.z + nz * w, p.x - nx * w, p.y, p.z - nz * w);
+    const a = 0.15 + 0.85 * (i / end);
+    alpha.push(a, a);
+    if (i < end) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  // punta della freccia
+  const p = pts[end], tip = pts[n - 1];
+  const dx = tip.x - p.x, dz = tip.z - p.z, L = Math.hypot(dx, dz) || 1;
+  const nx = -dz / L, nz = dx / L, W = 0.55;
+  const b = pos.length / 3;
+  pos.push(p.x + nx * W, p.y, p.z + nz * W, p.x - nx * W, p.y, p.z - nz * W, tip.x + (dx / L) * 0.4, p.y, tip.z + (dz / L) * 0.4);
+  alpha.push(1, 1, 1);
+  idx.push(b, b + 1, b + 2);
+  const geo = new BufferGeometry();
+  geo.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  const col: number[] = [];
+  alpha.forEach((a) => col.push(1, 0.88 * a + 0.1, 0.2 * a));
+  geo.setAttribute('color', new BufferAttribute(new Float32Array(col), 3));
+  geo.setIndex(idx);
+  const m = new Mesh(geo, new MeshBasicMaterial({ color, vertexColors: true, transparent: true, opacity: 0.92, side: DoubleSide, depthWrite: false }));
+  m.renderOrder = 5;
+  return m;
+}
 import { Engine } from '../engine/Engine';
 import { Player } from '../engine/Player';
 import { BallMesh } from '../engine/BallMesh';
@@ -195,8 +240,8 @@ export class Match {
   }
 
   /** Il bambino ha finito di disegnare. path: punti a terra; goalPoint: rilascio sullo specchio */
-  submitPath(path: Vector3[], goalPoint: Vector3 | null, gestureSpeed: number): KickPlan | null {
-    if (!this.canDraw || !this.carrier) return null;
+  private makePlan(path: Vector3[], goalPoint: Vector3 | null, gestureSpeed: number): KickPlan | null {
+    if (!this.carrier) return null;
     const c = this.carrier;
     const plan = planKick({
       ballPos: this.ball.pos.clone(),
@@ -209,13 +254,52 @@ export class Match {
       canShoot: true,
       airborne: this.airborne
     });
-    if (!plan) { this.ev.onBanner?.('Disegna una linea più lunga!', 'info'); return null; }
-    if (this.cfg.mode === 'penalty' && !plan.isShot) {
+    if (plan && this.cfg.mode === 'penalty' && !plan.isShot && path.length) {
       // ai rigori si tira sempre in porta
-      return this.submitPath(path, goalPoint ?? new Vector3(GOAL.x, 0.5, Math.max(-3, Math.min(3, path[path.length - 1].z))), gestureSpeed);
+      return this.makePlan(path, goalPoint ?? new Vector3(GOAL.x, 0.5, Math.max(-3, Math.min(3, path[path.length - 1].z))), gestureSpeed);
     }
-    this.kick(c, plan);
     return plan;
+  }
+
+  /** Il bambino ha finito di disegnare. path: punti a terra; goalPoint: rilascio sullo specchio */
+  submitPath(path: Vector3[], goalPoint: Vector3 | null, gestureSpeed: number): KickPlan | null {
+    this.clearPreview();
+    if (!this.canDraw || !this.carrier) return null;
+    const plan = this.makePlan(path, goalPoint, gestureSpeed);
+    if (!plan) { this.ev.onBanner?.('Disegna una linea più lunga!', 'info'); return null; }
+    this.kick(this.carrier, plan);
+    return plan;
+  }
+
+  // ---------------- anteprima della mira: freccia gialla e stella sul bersaglio ----------------
+  private preview: Group | null = null;
+  previewPath(path: Vector3[], goalPoint: Vector3 | null, gestureSpeed: number) {
+    if (!this.canDraw || !this.carrier) return;
+    const plan = this.makePlan(path, goalPoint, gestureSpeed);
+    this.clearPreview();
+    if (!plan) return;
+    const g = new Group();
+    const pts = sampleTrajectory(plan, 30).map((p) => new Vector3(p.x, 0.04, p.z));
+    g.add(arrowRibbon(pts, plan.isShot ? '#ffe14d' : '#ffe14d'));
+    if (plan.isShot) {
+      const star = new Mesh(STAR_GEO, STAR_MAT);
+      star.position.copy(plan.target).setX(GOAL.x - 0.05);
+      star.rotation.y = -Math.PI / 2;
+      g.add(star);
+    } else if (plan.receiverId !== null) {
+      const r = this.attackers.find((a) => a.id === plan.receiverId);
+      r?.highlight(1, '#ffe14d');
+    }
+    this.preview = g;
+    this.engine.scene.add(g);
+  }
+
+  clearPreview() {
+    if (this.preview) {
+      this.engine.scene.remove(this.preview);
+      this.preview.traverse((o: any) => { if (o.geometry && o.geometry !== STAR_GEO) o.geometry.dispose(); });
+      this.preview = null;
+    }
   }
 
   private kick(c: Player, plan: KickPlan) {
@@ -270,8 +354,8 @@ export class Match {
     if (pts.length < 2) return;
     pts.forEach((p) => (p.y = Math.max(p.y, 0.08)));
     const curve = new CatmullRomCurve3(pts);
-    const geo = new TubeGeometry(curve, 60, 0.07, 6, false);
-    const mat = new MeshBasicMaterial({ color: plan.isShot ? '#ffe14d' : '#7dffb0', transparent: true, opacity: 0.85, blending: AdditiveBlending, depthWrite: false });
+    const geo = new TubeGeometry(curve, 80, 0.045, 6, false);
+    const mat = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthWrite: false });
     this.trail = new Mesh(geo, mat);
     this.trailT = 0;
     this.engine.scene.add(this.trail);
@@ -559,6 +643,7 @@ export class Match {
   }
 
   dispose() {
+    this.clearPreview();
     this.unsub();
     this.clearPlayers();
     this.removeTrail();

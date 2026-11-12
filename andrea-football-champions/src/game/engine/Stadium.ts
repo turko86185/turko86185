@@ -6,6 +6,7 @@ import {
 } from 'three';
 import { FIELD, GOAL } from '../physics/constants';
 import type { StadiumTheme } from './themes';
+import { buildGrass, buildBowl, buildFlags, buildLED, buildDetails, type Waving, type CrowdHandle } from './StadiumDetails';
 
 function canvasTex(w: number, h: number, draw: (c: CanvasRenderingContext2D) => void) {
   const cv = document.createElement('canvas');
@@ -109,16 +110,23 @@ export class Stadium {
   private snow?: Points;
   private fireworks: { pts: Points; vel: Float32Array; t: number }[] = [];
   sun: DirectionalLight;
+  private crowd!: CrowdHandle;
+  private flags!: Waving;
+  private led!: Waving;
 
   constructor(private scene: Scene, public theme: StadiumTheme, quality: 'alta' | 'media' = 'alta') {
     scene.background = new Color(theme.skyBottom);
-    scene.fog = new Fog(theme.fog, 120, 260);
+    scene.fog = new Fog(theme.fog, 160, 380);
     this.buildSky();
     this.buildField();
     this.goal = new GoalMesh(1);
     this.goal2 = new GoalMesh(-1);
     this.group.add(this.goal.group, this.goal2.group);
-    this.crowdMat = this.buildStands(quality);
+    this.crowd = buildBowl(this.group, theme, quality, ['#ffffff', '#e63946', '#1d3557']);
+    this.crowdMat = new MeshLambertMaterial();
+    this.flags = buildFlags(this.group, [['#8e1f2f', '#f0bc42'], ['#1a8fd8', '#ffffff'], ['#0a4ea2', '#111111'], ['#c8102e', '#111111'], ['#87c3ea', '#ffffff']]);
+    this.led = buildLED(this.group);
+    buildDetails(this.group);
     // luci
     const hemi = new HemisphereLight(theme.skyBottom, '#2d5a27', theme.ambient);
     this.group.add(hemi);
@@ -166,31 +174,14 @@ export class Stadium {
 
   private buildField() {
     const t = this.theme;
-    const grass = canvasTex(512, 512, (c) => {
-      for (let i = 0; i < 8; i++) {
-        c.fillStyle = i % 2 ? t.grassA : t.grassB;
-        c.fillRect((i * 512) / 8, 0, 512 / 8, 512);
-      }
-      // rumore dell'erba
-      for (let i = 0; i < 9000; i++) {
-        c.fillStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,255,255'},${Math.random() * 0.06})`;
-        c.fillRect(Math.random() * 512, Math.random() * 512, 2, 3);
-      }
-    });
-    grass.wrapS = grass.wrapT = RepeatWrapping;
-    grass.repeat.set(2.6, 1);
-    grass.anisotropy = 4;
-    const field = new Mesh(new PlaneGeometry(FIELD.halfLength * 2 + 16, FIELD.halfWidth * 2 + 14), new MeshLambertMaterial({ map: grass }));
-    field.rotation.x = -Math.PI / 2;
-    field.receiveShadow = true;
-    this.group.add(field);
+    this.group.add(buildGrass(this.theme));
     // bordo esterno (pista)
     const outer = new Mesh(new PlaneGeometry(260, 200), new MeshLambertMaterial({ color: this.theme.night ? '#1f3d22' : '#3a6b33' }));
     outer.rotation.x = -Math.PI / 2; outer.position.y = -0.02; outer.receiveShadow = true;
     this.group.add(outer);
 
-    const lineMat = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.92 });
-    const W = 0.12, y = 0.012;
+    const lineMat = new MeshBasicMaterial({ color: '#f4f4f4', polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    const W = 0.15, y = 0.02;
     const rect = (cx: number, cz: number, lx: number, lz: number) => {
       const m = new Mesh(new PlaneGeometry(lx, lz), lineMat);
       m.rotation.x = -Math.PI / 2; m.position.set(cx, y, cz);
@@ -232,29 +223,6 @@ export class Stadium {
     const cs = new Mesh(new RingGeometry(0, 0.18, 16), lineMat);
     cs.rotation.x = -Math.PI / 2; cs.position.y = y;
     this.group.add(cs);
-    // cartelloni pubblicitari originali (senza marchi): messaggi per Andrea
-    const boardTex = canvasTex(1024, 64, (c) => {
-      const msgs = ['FORZA ANDREA!', 'ANDREA FOOTBALL CHAMPIONS', 'GOL GOL GOL!', 'SEI UN CAMPIONE!'];
-      const cols = ['#e63946', '#1d3557', '#f4a261', '#2a9d8f'];
-      for (let i = 0; i < 4; i++) {
-        c.fillStyle = cols[i]; c.fillRect(i * 256, 0, 256, 64);
-        c.fillStyle = '#fff'; c.font = 'bold 30px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(msgs[i], i * 256 + 128, 34, 240);
-      }
-    });
-    boardTex.wrapS = RepeatWrapping;
-    const boardMat = new MeshBasicMaterial({ map: boardTex });
-    const mkBoard = (len: number, x: number, z: number, ry: number) => {
-      const t = boardTex.clone(); t.needsUpdate = true; t.wrapS = RepeatWrapping; t.repeat.set(len / 40, 1);
-      const m = new Mesh(new BoxGeometry(len, 0.9, 0.1), new MeshBasicMaterial({ map: t }));
-      m.position.set(x, 0.45, z); m.rotation.y = ry;
-      this.group.add(m);
-    };
-    void boardMat;
-    mkBoard(L * 2 + 10, 0, -H - 4, 0);
-    mkBoard(L * 2 + 10, 0, H + 4, Math.PI);
-    mkBoard(H * 2 + 8, L + 5, 0, -Math.PI / 2);
-    mkBoard(H * 2 + 8, -L - 5, 0, Math.PI / 2);
   }
 
   private buildStands(quality: 'alta' | 'media') {
@@ -329,7 +297,7 @@ export class Stadium {
   }
 
   private buildFloodlights() {
-    const L = FIELD.halfLength + 14, H = FIELD.halfWidth + 14;
+    const L = FIELD.halfLength + 38, H = FIELD.halfWidth + 36;
     const glow = canvasTex(64, 64, (c) => {
       const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
       g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(255,250,220,0.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
@@ -337,15 +305,15 @@ export class Stadium {
     });
     const smat = new SpriteMaterial({ map: glow, blending: AdditiveBlending, depthWrite: false, fog: false });
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-      const pole = new Mesh(new CylinderGeometry(0.4, 0.6, 30, 8), new MeshLambertMaterial({ color: '#8a8f99' }));
-      pole.position.set(sx * L, 15, sz * H);
+      const pole = new Mesh(new CylinderGeometry(0.6, 0.9, 46, 8), new MeshLambertMaterial({ color: '#8a8f99' }));
+      pole.position.set(sx * L, 23, sz * H);
       this.group.add(pole);
       const head = new Mesh(new BoxGeometry(6, 3, 0.6), new MeshBasicMaterial({ color: '#fffbe6' }));
-      head.position.set(sx * L, 31, sz * H);
+      head.position.set(sx * L, 47, sz * H);
       head.lookAt(0, 0, 0);
       this.group.add(head);
       const sp = new Sprite(smat);
-      sp.scale.set(22, 22, 1);
+      sp.scale.set(34, 34, 1);
       sp.position.copy(head.position);
       this.group.add(sp);
     }
@@ -380,10 +348,13 @@ export class Stadium {
     this.fireworks.push({ pts, vel, t: 0 });
   }
 
-  setExcitement(v: number) { this.crowdUniforms.uExcite.value = v; }
+  setExcitement(v: number) { this.crowdUniforms.uExcite.value = v; if (this.crowd) this.crowd.uniforms.uExcite.value = v; }
 
   update(dt: number, time: number) {
     this.crowdUniforms.uTime.value = time;
+    this.crowd.uniforms.uTime.value = time;
+    this.flags.update(time);
+    this.led.update(time);
     this.goal.update(dt);
     if (this.snow) {
       const a = this.snow.geometry.attributes.position as BufferAttribute;

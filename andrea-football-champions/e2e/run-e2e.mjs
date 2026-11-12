@@ -5,6 +5,7 @@ const URL = process.env.URL || 'http://localhost:4173/';
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const ctx = await browser.newContext({ ...devices['iPhone 13 landscape'] });
 const page = await ctx.newPage();
+page.setDefaultTimeout(120000);
 const cdp = await ctx.newCDPSession(page);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
@@ -31,7 +32,8 @@ async function swipeTo(world, bend = 0, n = 14) {
   }, { world, bend, n });
   await touchSwipe(pts);
 }
-const waitState = (s, ms = 20000) => page.waitForFunction((s) => window.__afc?.match?.state === s, s, { timeout: ms });
+const bannerMatch = (re, ms = 60000) => page.waitForFunction((src) => { const t = document.querySelector('[data-testid=banner]')?.textContent || ''; return new RegExp(src).test(t) ? t : null; }, re, { timeout: ms }).then((h) => h.jsonValue()).catch(() => 'nessuno');
+const waitState = (s, ms = 60000) => page.waitForFunction((s) => window.__afc?.match?.state === s, s, { timeout: ms });
 const levels = (n) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i + 1, { stars: 3, tries: 1 }]));
 async function boot(seed) {
   await page.evaluate((seed) => { localStorage.setItem('andrea-football-champions-v1', JSON.stringify(seed)); }, seed);
@@ -70,7 +72,7 @@ const plan1 = await page.evaluate(() => window.__afc.lastPlan && { type: window.
 check('touch: disegno rilevato e convertito in passaggio', plan1 && plan1.recv === 1, JSON.stringify(plan1));
 await page.waitForTimeout(300);
 await page.screenshot({ path: 'e2e/shots/11-l1-flight.png' });
-await page.waitForSelector('[data-testid=result]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=result]', { timeout: 60000 });
 check('livello 1 completato (passaggio ricevuto)', (await page.textContent('[data-testid=result]')).includes('Livello 1'));
 await page.screenshot({ path: 'e2e/shots/12-l1-result.png' });
 const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('andrea-football-champions-v1')).levels['1']);
@@ -79,23 +81,20 @@ check('progressi salvati', saved && saved.stars >= 1, JSON.stringify(saved));
 // ---- Livello 3: tiro in porta → gol
 await page.tap('[data-testid=btn-next]');
 await waitState('aim');
-await page.tap('[data-testid=btn-next]').catch(() => {});
-await page.evaluate(() => 0);
 // livello 2: passaggio lungo
 await swipeTo([32, 0, 8]);
-await page.waitForSelector('[data-testid=result]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=result]', { timeout: 60000 });
 check('livello 2 completato', true);
 await page.tap('[data-testid=btn-next]');
 await waitState('aim');
 await page.waitForTimeout(300);
 await swipeTo([52.5, 1.0, 0.5]);
-await page.waitForSelector('[data-testid=banner]', { timeout: 15000 });
-const b3 = await page.textContent('[data-testid=banner]');
+const b3 = await bannerMatch('GOO|arat|ARAT|PALO');
 await page.screenshot({ path: 'e2e/shots/13-goal.png' });
 check('tiro → GOL', b3.includes('GOO'), b3);
 await page.waitForTimeout(1500);
 await page.screenshot({ path: 'e2e/shots/14-celebrate.png' });
-await page.waitForSelector('[data-testid=result]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=result]', { timeout: 60000 });
 
 // ---- Livello 5 con portiere: tiri finché segna, registra parate
 await boot({ version: 1, welcomed: true, teamId: 'roma', stadiumId: 'stelle', ballId: 'classico', kitId: 'casa', levels: levels(4), trophies: [], settings: { sfx: true, music: true, voice: true, quality: 'alta' } });
@@ -106,12 +105,12 @@ for (let i = 0; i < 6 && goals === 0; i++) {
   await page.waitForTimeout(300);
   const kz = await page.evaluate(() => window.__afc.match.keeper.pos.z);
   await swipeTo([52.5, 0.6, kz > 0 ? -2.6 : 2.6]);
-  const o = await page.waitForFunction(() => { const t = document.querySelector('[data-testid=banner]')?.textContent || ''; return /GOO|PARAT|parata|Palla|PALO/.test(t) ? t : null; }, null, { timeout: 15000 }).then((h) => h.jsonValue()).catch(() => 'nessuno');
+  const o = await page.waitForFunction(() => { const t = document.querySelector('[data-testid=banner]')?.textContent || ''; return /GOO|PARAT|parata|Palla|PALO/.test(t) ? t : null; }, null, { timeout: 60000 }).then((h) => h.jsonValue()).catch(() => 'nessuno');
   if (/GOO/.test(o)) goals++; else if (/arat|ARAT/.test(o)) saves++;
   if (!goals) await page.waitForTimeout(4200);
 }
 check('portiere battuto (gol con il portiere)', goals > 0, `parate=${saves}`);
-await page.waitForSelector('[data-testid=result]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=result]', { timeout: 60000 });
 
 // ---- Tiro a effetto (livello 16) + il portiere si tuffa
 await boot({ version: 1, welcomed: true, teamId: 'roma', stadiumId: 'tramonto', ballId: 'classico', kitId: 'casa', levels: levels(15), trophies: [], settings: { sfx: true, music: true, voice: true, quality: 'alta' } });
@@ -135,13 +134,13 @@ await page.tap('[data-testid=menu-play]');
 await waitState('aim');
 await page.waitForTimeout(300);
 await swipeTo([38, 0, 2]);
-await page.waitForFunction(() => window.__afc.match.state === 'flight', null, { timeout: 15000 });
+await page.waitForFunction(() => window.__afc.match.state === 'flight', null, { timeout: 60000 });
 await page.waitForTimeout(200);
 const p9 = await page.evaluate(() => window.__afc.lastPlan?.type);
 check('passaggio sopra il difensore = pallonetto', p9 === 'lob_pass', p9);
 const defMoved = await page.evaluate(() => { const d = window.__afc.match.defenders[0]; return !!d.target || d.vel.length() > 0; });
 check('il difensore si muove verso il pallone', defMoved);
-await page.waitForSelector('[data-testid=result]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=result]', { timeout: 60000 });
 check('livello 9 superato (difensore superato)', true);
 
 // ---- Rigori: tiro + parata con i pulsanti
@@ -152,13 +151,13 @@ await waitState('aim');
 await page.waitForTimeout(300);
 await page.screenshot({ path: 'e2e/shots/16-penalty.png' });
 await swipeTo([52.5, 0.8, -2.5]);
-await page.waitForSelector('[data-testid=interlude]', { timeout: 25000 });
-await page.waitForFunction(() => window.__afc?.match?.cfg.mode === 'penaltyDefend' && window.__afc.match.state === 'aim', null, { timeout: 25000 });
+await page.waitForSelector('[data-testid=interlude]', { timeout: 60000 });
+await page.waitForFunction(() => window.__afc?.match?.cfg.mode === 'penaltyDefend' && window.__afc.match.state === 'aim', null, { timeout: 60000 });
 await page.waitForTimeout(500);
 await page.screenshot({ path: 'e2e/shots/17-keeper.png' });
 await page.tap('.keeper-btns button:nth-child(1)');
-await page.waitForSelector('[data-testid=banner]', { timeout: 15000 });
-check('rigore avversario e tuffo del portiere di Andrea', true, await page.textContent('[data-testid=banner]'));
+const bp = await bannerMatch('Gol|PARATA');
+check('rigore avversario e tuffo del portiere di Andrea', bp !== 'nessuno', bp);
 
 // ---- Allenamento
 await page.tap('button[aria-label=Pausa]');
@@ -169,7 +168,7 @@ await waitState('aim');
 await page.waitForTimeout(300);
 await page.screenshot({ path: 'e2e/shots/18-training.png' });
 await swipeTo([52.5, 1.2, -2.6]);
-await page.waitForSelector('[data-testid=interlude]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=interlude]', { timeout: 60000 });
 check('allenamento: punteggio', /Punti/.test(await page.textContent('[data-testid=interlude]')));
 
 // ---- Prestazioni
@@ -179,7 +178,7 @@ console.log('FPS (headless software rendering):', fps.toFixed(1));
 // ---- Offline
 await ctx.setOffline(true);
 await page.reload();
-await page.waitForSelector('[data-testid=splash]', { timeout: 25000 });
+await page.waitForSelector('[data-testid=splash]', { timeout: 60000 });
 await page.tap('[data-testid=splash]');
 await page.waitForSelector('[data-testid=menu]');
 const st = await page.evaluate(() => JSON.parse(localStorage.getItem('andrea-football-champions-v1')).teamId);

@@ -106,3 +106,12 @@ table.std tr:nth-child(even) { background: rgba(255,255,255,0.06); }
 .diff .btn { min-width: 0; padding: 8px 12px; font-size: clamp(14px, 3.8vw, 18px); }
 .diff .diff-off { background: rgba(255,255,255,0.15); box-shadow: 0 4px 0 rgba(0,0,0,0.35); }
 .diff .diff-on { transform: scale(1.08); outline: 3px solid #fff; }
+
+/* Tabellone stile TV */
+.scoreboard { display: flex; align-items: stretch; gap: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); }
+.sb-clock { background: #0b0b0f; color: #fff; font-weight: 900; font-size: clamp(16px, 4.6vw, 24px); padding: 6px 12px; border-radius: 10px 0 0 10px; display: flex; align-items: center; font-style: italic; min-width: 64px; justify-content: center; }
+.sb-team { width: clamp(44px, 12vw, 58px); display: flex; align-items: center; justify-content: center; border: 3px solid #fff; border-radius: 8px; margin-left: -2px; }
+.sb-team b { color: #fff; font-size: clamp(22px, 6.5vw, 32px); font-weight: 900; font-style: italic; text-shadow: 0 0 3px #000, 0 2px 0 #000, 0 0 8px rgba(0,0,0,0.8); }
+.sb-dash { background: #0b0b0f; color: #fff; font-weight: 900; padding: 0 6px; display: flex; align-items: center; margin-left: -2px; }
+.hud .pause { width: 46px; height: 46px; font-size: 20px; border-radius: 14px; background: rgba(0,0,0,0.55); box-shadow: none; }
+.objective { position: fixed; z-index: 20; top: calc(max(8px, env(safe-area-inset-top)) + 58px); left: 50%; transform: translateX(-50%); max-width: 92vw; width: max-content; font-size: clamp(14px, 3.8vw, 20px); padding: 6px 14px; background: rgba(0,0,0,0.45); border-color: rgba(255,214,10,0.7); }

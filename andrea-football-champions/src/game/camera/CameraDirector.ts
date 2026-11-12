@@ -40,10 +40,19 @@ export class CameraDirector {
     let ok = true;
     for (const p of pts) {
       const v = p.clone().project(c);
-      if (v.z > 1 || Math.abs(v.x) > 0.85 || v.y > 0.72 || v.y < -0.62) { ok = false; break; }
+      if (v.z > 1 || Math.abs(v.x) > 0.9 || v.y > 0.75 || v.y < -0.72) { ok = false; break; }
     }
     c.position.copy(saveP); c.quaternion.copy(saveQ); c.updateMatrixWorld();
     return ok;
+  }
+
+  private ndcY(pos: Vector3, look: Vector3, p: Vector3): number {
+    const c = this.cam;
+    const sp = c.position.clone(), sq = c.quaternion.clone();
+    c.position.copy(pos); c.lookAt(look); c.updateMatrixWorld();
+    const v = p.clone().project(c);
+    c.position.copy(sp); c.quaternion.copy(sq); c.updateMatrixWorld();
+    return v.y;
   }
 
   private compute() {
@@ -56,16 +65,33 @@ export class CameraDirector {
         const dist = dir.length();
         dir.normalize();
         // look: tra il giocatore e la porta
-        const look = f.clone().lerp(goal, dist > 28 ? 0.32 : Math.min(0.55, 10 / Math.max(10, dist) + 0.2));
-        look.y = 0.5;
-        const pts = [f.clone().setY(0), f.clone().setY(1.9), ...this.interest];
-        if (dist < 28) pts.push(goal.clone().setY(2.4), goal.clone().setY(0).setZ(-GOAL.halfWidth), goal.clone().setY(0).setZ(GOAL.halfWidth));
+        // inquadratura "da dietro al giocatore" (stile videogioco moderno):
+        // il portatore in basso al centro; la telecamera guarda verso la porta e verso i compagni davanti
+        const portrait = this.cam.aspect < 1;
+        const mates = this.interest.filter((p) => p.x > f.x - 3);
+        const aim = goal.clone().setY(0);
+        for (const m of mates) aim.add(m.clone().setY(0));
+        aim.divideScalar(mates.length + 1);
+        const vdir = new Vector3(aim.x - f.x, 0, aim.z - f.z);
+        if (vdir.lengthSq() < 1) vdir.copy(dir);
+        vdir.normalize();
+        const ahead = Math.min(dist * 0.55, 16);
+        const look = f.clone().addScaledVector(vdir, ahead);
+        look.y = 1.6;
+        const pts = [f.clone().setY(0.0), f.clone().setY(1.9), ...mates.map((m) => m.clone().setY(0.9))];
         let chosen = new Vector3();
-        for (let back = 5; back <= 40; back += 1) {
-          const pos = f.clone().addScaledVector(dir, -back);
-          pos.y = 2.4 + back * 0.36;
+        for (let back = portrait ? 5.2 : 4.6; back <= 26; back += back < 10 ? 0.5 : 1.5) {
+          const pos = f.clone().addScaledVector(vdir, -back);
+          pos.y = 2.8 + back * 0.32;
           chosen = pos;
           if (this.fits(pos, look, pts)) break;
+        }
+        // alza lo sguardo finché il portatore è in basso nello schermo (come nei giochi di calcio moderni)
+        for (let i = 0; i < 24; i++) {
+          const ny = this.ndcY(chosen, look, f.clone().setY(0));
+          if (ny <= -0.42) break;
+          look.y += 0.35;
+          if (!this.fits(chosen, look, pts)) { look.y -= 0.35; break; }
         }
         this.desiredPos.copy(chosen);
         this.desiredLook.copy(look);
@@ -82,9 +108,9 @@ export class CameraDirector {
         break;
       }
       case 'follow': {
-        const dirX = Math.max(f.x - 14, Math.min(f.x - 8, GOAL.x - 20));
-        this.desiredPos.set(dirX, 7 + f.y * 0.4, f.z * 0.7);
-        this.desiredLook.set(f.x + 4, Math.max(0.5, f.y * 0.7), f.z * 0.9);
+        const dirX = Math.max(f.x - 12, Math.min(f.x - 7, GOAL.x - 16));
+        this.desiredPos.set(dirX, 4.2 + f.y * 0.4, f.z * 0.75);
+        this.desiredLook.set(f.x + 5, Math.max(0.6, f.y * 0.7), f.z * 0.9);
         break;
       }
       case 'celebrate': {

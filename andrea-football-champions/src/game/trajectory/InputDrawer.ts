@@ -18,6 +18,8 @@ export class InputDrawer {
   enabled = () => true;
   onDone: (r: DrawResult) => void = () => {};
   onStart: () => void = () => {};
+  onMove: (r: DrawResult) => void = () => {};
+  private lastMove = 0;
 
   constructor(private canvas: HTMLCanvasElement, private engine: Engine) {
     this.ctx = canvas.getContext('2d')!;
@@ -61,6 +63,11 @@ export class InputDrawer {
     const last = this.pts[this.pts.length - 1];
     const x = e.clientX - r.left, y = e.clientY - r.top;
     if (Math.hypot(x - last.x, y - last.y) >= 4) this.pts.push({ x, y, t: performance.now() });
+    const now = performance.now();
+    if (now - this.lastMove > 50 && this.pts.length > 2) {
+      this.lastMove = now;
+      this.onMove(this.toWorld(this.pts.map((p) => ({ x: p.x + r.left, y: p.y + r.top, t: p.t }))));
+    }
   };
 
   private up = (e: PointerEvent) => {
@@ -123,19 +130,19 @@ export class InputDrawer {
       const l = this.pts[this.pts.length - 1];
       c.lineTo(l.x, l.y);
     };
-    c.shadowColor = '#fff36b';
-    c.shadowBlur = 24;
-    c.strokeStyle = 'rgba(255, 225, 77, 0.55)';
-    c.lineWidth = 18;
+    c.shadowColor = 'rgba(255,255,255,0.8)';
+    c.shadowBlur = 10;
+    c.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    c.lineWidth = 10;
     trace(); c.stroke();
-    c.shadowBlur = 8;
+    c.shadowBlur = 4;
     c.strokeStyle = '#ffffff';
-    c.lineWidth = 6;
+    c.lineWidth = 3.5;
     trace(); c.stroke();
     // punta a freccia
     const l = this.pts[this.pts.length - 1];
-    c.fillStyle = '#ffe14d';
-    c.beginPath(); c.arc(l.x, l.y, 11, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.9)';
+    c.beginPath(); c.arc(l.x, l.y, 7, 0, Math.PI * 2); c.fill();
     c.restore();
   };
 

@@ -1,5 +1,11 @@
 import { ACESFilmicToneMapping, Clock, PCFSoftShadowMap, PerspectiveCamera, Plane, Raycaster, Scene, SRGBColorSpace, Vector2, Vector3, WebGLRenderer } from 'three';
 import { CameraDirector } from '../camera/CameraDirector';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { PMREMGenerator, WebGLRenderTarget, HalfFloatType } from 'three';
 import { Stadium } from './Stadium';
 import { getStadium } from './themes';
 
@@ -17,6 +23,8 @@ export class Engine {
   private ray = new Raycaster();
   private ground = new Plane(new Vector3(0, 1, 0), 0);
   timeScale = 1;
+  private composer: EffectComposer | null = null;
+  private bloom: UnrealBloomPass | null = null;
   fps = 60;
   private fpsAcc = 0; private fpsN = 0;
 
@@ -28,9 +36,21 @@ export class Engine {
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
-    this.camera = new PerspectiveCamera(50, 1, 0.1, 900);
+    this.camera = new PerspectiveCamera(50, 1, 0.3, 700);
     this.director = new CameraDirector(this.camera);
     this.stadium = new Stadium(this.scene, getStadium(stadiumId), quality);
+    // luce ambientale "da studio" per materiali più realistici
+    const pm = new PMREMGenerator(this.renderer);
+    this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environmentIntensity = 0.35;
+    if (false as boolean) {
+      // post-processing (disattivato: troppo pesante sui telefoni): bagliore delle luci (bloom) come nelle trasmissioni TV
+      this.composer = new EffectComposer(this.renderer, new WebGLRenderTarget(4, 4, { samples: 4, type: HalfFloatType }));
+      this.composer.addPass(new RenderPass(this.scene, this.camera));
+      this.bloom = new UnrealBloomPass(new Vector2(256, 256), 0.32, 0.5, 0.88);
+      this.composer.addPass(this.bloom);
+      this.composer.addPass(new OutputPass());
+    }
     this.resize();
     window.addEventListener('resize', this.resize);
     window.addEventListener('orientationchange', this.resize);
@@ -47,9 +67,14 @@ export class Engine {
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
+    if (this.composer) {
+      this.composer.setPixelRatio(this.renderer.getPixelRatio());
+      this.composer.setSize(w, h);
+      this.bloom?.resolution.set(w / 2, h / 2);
+    }
     this.camera.aspect = w / h;
     // in verticale (iPhone in mano) allarghiamo il campo visivo
-    this.camera.fov = w < h ? 68 : 50;
+    this.camera.fov = w < h ? 66 : 46;
     this.camera.updateProjectionMatrix();
   };
 
@@ -65,7 +90,8 @@ export class Engine {
     this.updaters.forEach((u) => u(dt, this.time));
     this.director.update(raw);
     this.stadium.update(dt, this.time);
-    this.renderer.render(this.scene, this.camera);
+    if (this.composer) this.composer.render(raw);
+    else this.renderer.render(this.scene, this.camera);
   };
 
   /** Coordinate schermo (px) → punto sul terreno */

@@ -13,7 +13,7 @@ export interface SessionResult {
   interlude?: string; // messaggio tra un'azione e l'altra
 }
 
-export interface HudInfo { objective: string; left?: string; right?: string; scoreHome?: number; scoreAway?: number; homeShort?: string; awayShort?: string; progress?: string }
+export interface HudInfo { clock?: string; objective: string; left?: string; right?: string; scoreHome?: number; scoreAway?: number; homeShort?: string; awayShort?: string; progress?: string }
 
 export interface Session {
   kind: 'level' | 'quick' | 'penalties' | 'training' | 'championship';
@@ -132,6 +132,7 @@ export class LevelSession implements Session {
       objective: this.level.text,
       progress: o === 'goals_n' ? `⚽ ${this.goals}/${this.level.required}` : undefined,
       left: `Livello ${this.level.id}`,
+      clock: `LIV ${this.level.id}`, scoreHome: this.goals, scoreAway: 0,
       right: `Tentativo ${this.attempts + 1}`,
       homeShort: this.homeTeam.short, awayShort: this.awayTeam.short
     };
@@ -199,7 +200,7 @@ export class QuickMatchSession implements Session {
   }
 
   hud(): HudInfo {
-    return { objective: `Attacco ${Math.min(this.attack + 1, this.attacks)} di ${this.attacks}`, scoreHome: this.gf, scoreAway: this.ga, homeShort: this.homeTeam.short, awayShort: this.awayTeam.short };
+    return { clock: `${Math.min(90, Math.round(((this.attack + 0.5) / this.attacks) * 90))}'`, objective: `Attacco ${Math.min(this.attack + 1, this.attacks)} di ${this.attacks}`, scoreHome: this.gf, scoreAway: this.ga, homeShort: this.homeTeam.short, awayShort: this.awayTeam.short };
   }
 }
 
@@ -257,7 +258,7 @@ export class PenaltySession implements Session {
     return { done: true, success: win, title: win ? 'HAI VINTO AI RIGORI!' : 'Hanno vinto loro... la prossima volta vinci tu!', subtitle: `${this.homeTeam.name} ${this.homeGoals} - ${this.awayGoals} ${this.awayTeam.name}` };
   }
   hud(): HudInfo {
-    return { objective: this.turn === 'shoot' ? 'Disegna il tiro e segna il rigore!' : 'Sei il portiere! Tocca dove tuffarti!', scoreHome: this.homeGoals, scoreAway: this.awayGoals, homeShort: this.homeTeam.short, awayShort: this.awayTeam.short,
+    return { clock: 'RIGORI', objective: this.turn === 'shoot' ? 'Disegna il tiro e segna il rigore!' : 'Sei il portiere! Tocca dove tuffarti!', scoreHome: this.homeGoals, scoreAway: this.awayGoals, homeShort: this.homeTeam.short, awayShort: this.awayTeam.short,
       progress: this.homeKicks.length ? `Tu: ${this.homeKicks.map((k) => (k ? '🟢' : '🔴')).join('')}  Loro: ${this.awayKicks.map((k) => (k ? '🟢' : '🔴')).join('')}` : undefined };
   }
 }
@@ -312,7 +313,7 @@ export class TrainingSession implements Session {
   }
   hud(): HudInfo {
     const t = { tiro: 'Colpisci i cerchi nella porta!', passaggi: 'Passa la palla ai compagni!', precisione: 'Centra i cerchi e batti il portiere!' };
-    return { objective: t[this.drill], left: 'Allenamento', right: `Punti: ${this.points}` };
+    return { clock: 'ALLEN.', objective: t[this.drill], scoreHome: this.points, scoreAway: 0, homeShort: this.homeTeam.short, awayShort: 'PTS' };
   }
 }
 

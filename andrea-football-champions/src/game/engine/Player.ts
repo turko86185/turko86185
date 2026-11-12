@@ -6,7 +6,7 @@ import type { Kit } from '../teams/teams';
 export type Side = 'att' | 'def';
 export type Role = 'player' | 'keeper';
 
-const ringGeo = new RingGeometry(0.55, 0.75, 32);
+const ringGeo = new RingGeometry(0.62, 0.7, 40);
 
 /** Un calciatore in campo: modello 3D + animazioni + stato di movimento */
 export class Player {
