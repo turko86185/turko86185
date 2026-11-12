@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Engine } from '../game/engine/Engine';
 import { Match, type Outcome } from '../game/match/Match';
 import { InputDrawer } from '../game/trajectory/InputDrawer';
-import type { Session, SessionResult } from '../game/match/sessions';
+import { applyDifficulty, type Session, type SessionResult } from '../game/match/sessions';
 import { Audio } from '../game/audio/AudioManager';
 import { Save } from '../game/save/SaveManager';
 import { BALLS } from '../game/save/rewards';
@@ -59,13 +59,13 @@ export function GameScreen({ engine, session, onEnd, onQuit }: { engine: Engine;
         setTimeout(() => {
           if (endedRef.current) return;
           setInterlude(null);
-          m.setup(session.nextConfig());
+          m.setup(applyDifficulty(session.nextConfig(), Save.data.settings.difficulty));
           setHintOn(!!m.cfg.hint);
         }, 2400);
       }
     });
     matchRef.current = m;
-    const cfg = session.nextConfig();
+    const cfg = applyDifficulty(session.nextConfig(), Save.data.settings.difficulty);
     m.setup(cfg);
     setHintOn(!!cfg.hint);
     const drawer = new InputDrawer(drawRef.current!, engine);

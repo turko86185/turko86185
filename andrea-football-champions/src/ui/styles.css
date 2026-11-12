@@ -100,3 +100,9 @@ table.std tr:nth-child(even) { background: rgba(255,255,255,0.06); }
   .cup { font-size: 70px !important; }
   .result .btn.big { font-size: 22px; }
 }
+
+.diff { margin: 6px 0 2px; display: flex; flex-direction: column; align-items: center; }
+.diff-title { font-weight: 900; font-size: 20px; margin-bottom: 6px; }
+.diff .btn { min-width: 0; padding: 8px 12px; font-size: clamp(14px, 3.8vw, 18px); }
+.diff .diff-off { background: rgba(255,255,255,0.15); box-shadow: 0 4px 0 rgba(0,0,0,0.35); }
+.diff .diff-on { transform: scale(1.08); outline: 3px solid #fff; }

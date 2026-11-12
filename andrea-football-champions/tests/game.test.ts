@@ -192,3 +192,16 @@ describe('Salvataggi e modalità', () => {
     expect(s3.onOutcome({ kind: 'goal', passes: 0 } as any).done).toBe(true);
   });
 });
+
+import { applyDifficulty } from '../src/game/match/sessions';
+describe('Difficoltà Facile / Medio / Difficile', () => {
+  it('Facile aiuta di più, Difficile rende gli avversari più forti', () => {
+    const cfg = new LevelSession(LEVELS[40], 'roma', 'casa').nextConfig();
+    const f = applyDifficulty(cfg, 'facile'), m = applyDifficulty(cfg, 'medio'), d = applyDifficulty(cfg, 'difficile');
+    expect(f.difficulty).toBeLessThan(m.difficulty);
+    expect(d.difficulty).toBeGreaterThan(m.difficulty);
+    expect(f.assist).toBeGreaterThanOrEqual(m.assist);
+    expect(d.assist).toBeLessThan(m.assist);
+    expect(d.difficulty).toBeLessThanOrEqual(0.95);
+  });
+});

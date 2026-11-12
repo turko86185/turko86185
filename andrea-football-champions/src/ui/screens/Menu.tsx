@@ -4,6 +4,7 @@ import { Badge } from '../Badge';
 import { getTeam } from '../../game/teams/teams';
 import { Save } from '../../game/save/SaveManager';
 import { Audio } from '../../game/audio/AudioManager';
+import { DifficultyPicker } from '../DifficultyPicker';
 
 const GREETINGS = ['Bentornato Andrea! Pronto per un altro gol?', 'Ciao campione! Si gioca?', 'Eccoti Andrea! Lo stadio ti aspetta!', 'Bravo Andrea! Facciamo un\'altra partita?'];
 
@@ -34,6 +35,7 @@ export function Menu({ go, greet }: { go: (t: MenuTarget) => void; greet: boolea
         </div>
       )}
       {team && <div className="row" style={{ gap: 8 }}><Badge team={team} size={34} /><b>{team.name}</b></div>}
+      <DifficultyPicker />
       <div className="menu-grid">
         {b('play', 'yellow play big', '▶️', 'GIOCA')}
         {b('levels', 'green', '🗺️', 'LIVELLI')}

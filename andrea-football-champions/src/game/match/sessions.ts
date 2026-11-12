@@ -1,7 +1,7 @@
 import { getTeam, SPECIAL_KITS, TEAMS, type Kit, type Team } from '../teams/teams';
 import { starsFor, type LevelDef, type Scenario } from '../levels/levels';
 import type { MatchConfig, Outcome } from './Match';
-import type { TableRow, ChampionshipState } from '../save/SaveManager';
+import type { TableRow, ChampionshipState, Difficulty } from '../save/SaveManager';
 import { GOAL, FIELD } from '../physics/constants';
 
 export interface SessionResult {
@@ -357,4 +357,16 @@ export function recordRound(st: ChampionshipState, gf: number, ga: number, rnd =
 
 export function standings(st: ChampionshipState) {
   return Object.entries(st.table).sort(([, a], [, b]) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf).map(([id, r]) => ({ id, ...r }));
+}
+
+/**
+ * Difficoltà scelta da Andrea: modifica portiere e difensori (difficulty) e aiuto ai tiri (assist).
+ *  - facile: portieri e difensori molto morbidi, aiuto massimo
+ *  - medio: come progettato nei livelli
+ *  - difficile: avversari più svegli, meno aiuto
+ */
+export function applyDifficulty(cfg: MatchConfig, level: Difficulty): MatchConfig {
+  if (level === 'facile') return { ...cfg, difficulty: cfg.difficulty * 0.5, assist: Math.max(cfg.assist, 0.9) };
+  if (level === 'difficile') return { ...cfg, difficulty: Math.min(0.95, cfg.difficulty * 1.4 + 0.25), assist: Math.max(0.2, cfg.assist * 0.55), hint: false };
+  return cfg;
 }

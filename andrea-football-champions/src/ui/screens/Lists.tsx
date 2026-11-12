@@ -8,6 +8,7 @@ import { STADIUMS } from '../../game/engine/themes';
 import { CHAMP_ROUNDS, standings } from '../../game/match/sessions';
 import type { Drill } from '../../game/match/sessions';
 import { Audio } from '../../game/audio/AudioManager';
+import { DifficultyPicker } from '../DifficultyPicker';
 
 const Back = ({ onBack }: { onBack: () => void }) => <button className="btn small red" onClick={() => { Audio.play('click'); onBack(); }}>⬅ Menu</button>;
 
@@ -167,6 +168,7 @@ export function Settings({ onBack, onChange }: { onBack: () => void; onChange: (
   return (
     <div className="screen dim center" style={{ gap: 14 }}>
       <div className="topbar"><Back onBack={onBack} /><h2>Impostazioni</h2><span /></div>
+      <DifficultyPicker big />
       <button className={`btn big ${s.music ? 'green' : 'red'}`} onClick={() => toggle('music')}>🎵 Musica: {s.music ? 'SÌ' : 'NO'}</button>
       <button className={`btn big ${s.sfx ? 'green' : 'red'}`} onClick={() => toggle('sfx')} data-testid="toggle-sfx">🔊 Effetti e pubblico: {s.sfx ? 'SÌ' : 'NO'}</button>
       <button className={`btn big ${s.voice ? 'green' : 'red'}`} onClick={() => toggle('voice')}>🗣️ Voce: {s.voice ? 'SÌ' : 'NO'}</button>

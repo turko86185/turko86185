@@ -9,6 +9,8 @@ export interface ChampionshipState {
   finished: boolean;
 }
 
+export type Difficulty = 'facile' | 'medio' | 'difficile';
+
 export interface SaveData {
   version: 1;
   welcomed: boolean;
@@ -24,7 +26,7 @@ export interface SaveData {
     championships: number;
   };
   championship: ChampionshipState | null;
-  settings: { sfx: boolean; music: boolean; voice: boolean; quality: 'alta' | 'media' };
+  settings: { sfx: boolean; music: boolean; voice: boolean; quality: 'alta' | 'media'; difficulty: Difficulty };
 }
 
 const KEY = 'andrea-football-champions-v1';
@@ -34,7 +36,7 @@ export const defaultSave = (): SaveData => ({
   levels: {}, trophies: [],
   records: { goals: 0, passes: 0, curlGoals: 0, headerGoals: 0, cornerGoals: 0, longGoals: 0, penaltiesScored: 0, penaltyWins: 0, trainingBest: 0, quickWins: 0, quickPlayed: 0, posts: 0, championships: 0 },
   championship: null,
-  settings: { sfx: true, music: true, voice: true, quality: 'alta' }
+  settings: { sfx: true, music: true, voice: true, quality: 'alta', difficulty: 'facile' }
 });
 
 export interface Storage { getItem(k: string): string | null; setItem(k: string, v: string): void }
