@@ -512,7 +512,7 @@ export class Match {
     for (const a of this.attackers) {
       if (a === this.kickerOf() && (this.ball.mode === 'planned' || this.engine.time - this.kickTime < 0.8)) continue;
       const dh = Math.hypot(b.x - a.pos.x, b.z - a.pos.z);
-      const near = dh < 1.3 + this.cfg.assist * 0.6;
+      const near = dh < 1.6 + this.cfg.assist * 0.5;
       if (!near) continue;
       if (b.y < 1.1) { this.receive(a); return; }
       if (b.y < 2.5 && this.ball.vel.y < 0 && b.x > GOAL.x - 22 && this.plan?.type === 'cross') { this.headerChance(a); return; }

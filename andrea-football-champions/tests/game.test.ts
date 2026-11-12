@@ -212,3 +212,21 @@ describe('Difficoltà Facile / Medio / Difficile', () => {
     expect(applyDifficulty(l1, 'difficile').difficulty).toBeGreaterThanOrEqual(0.75);
   });
 });
+
+describe('Passaggio dosato (striscia oltre il compagno, dito veloce)', () => {
+  it('va al compagno e arriva morbido anche con un gesto velocissimo', () => {
+    const tm = new Vector3(30, 0, -6);
+    for (const overshoot of [0, 2, 3.5]) {
+      const end = tm.clone().add(new Vector3(overshoot * 0.8, 0, -overshoot * 0.6));
+      const plan = planKick({ ...base, assist: 0.5, gestureSpeed: 4000, ballPos: new Vector3(18, BALL_R, 0), path: line(new Vector3(18, 0, 0), end), teammates: [{ id: 1, pos: tm }] })!;
+      expect(plan.type).toBe('ground_pass');
+      expect(Math.hypot(plan.target.x - tm.x, plan.target.z - tm.z)).toBeLessThan(0.1);
+      const vEnd = Math.hypot(plan.v0.x + plan.a.x * plan.T, plan.v0.z + plan.a.z * plan.T);
+      expect(vEnd).toBeLessThan(5);
+      expect(Math.hypot(plan.v0.x, plan.v0.z)).toBeLessThanOrEqual(16.01);
+      // dopo l'arrivo il pallone si ferma entro pochi metri dal compagno
+      const b = new BallPhysics(); b.launch(plan); simulate(b, 8);
+      expect(Math.hypot(b.pos.x - tm.x, b.pos.z - tm.z)).toBeLessThan(8);
+    }
+  });
+});

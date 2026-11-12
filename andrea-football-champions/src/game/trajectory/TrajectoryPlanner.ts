@@ -170,11 +170,15 @@ export function planKick(inp: PlanInput): KickPlan | null {
   if (receiver) {
     receiverId = receiver.id;
     const tm = receiver.pos;
-    const ahead = end.distanceTo(new Vector3(tm.x, 0, tm.z));
-    if (ahead > 2.5 && end.x > tm.x) {
-      target = new Vector3(end.x, BALL_R, end.z);
+    // Se il dito va un po' oltre il compagno è comunque un passaggio AL compagno.
+    // Diventa un lancio in profondità solo se la linea prosegue chiaramente verso la porta,
+    // e in quel caso il pallone va al massimo 5 m davanti a lui.
+    const lead = new Vector3(end.x - tm.x, 0, end.z - tm.z);
+    if (lead.length() > 5.5 && end.x > tm.x + 2) {
+      lead.setLength(Math.min(lead.length(), 5));
+      target = new Vector3(tm.x + lead.x, BALL_R, tm.z + lead.z);
       type = 'through_pass';
-    } else target = new Vector3(tm.x + 0.6, BALL_R, tm.z);
+    } else target = new Vector3(tm.x, BALL_R, tm.z);
   } else {
     // nessun compagno vicino: passaggio nello spazio verso il compagno più vicino al punto
     const any = nearestTeammate(inp.teammates, end, 18);
@@ -208,12 +212,13 @@ export function planKick(inp: PlanInput): KickPlan | null {
     const curve = hasCurve ? dev.clone().setLength(curveMag).multiplyScalar(-8 / (T * T)) : new Vector3();
     a = new Vector3(curve.x, -GRAVITY, curve.z);
   } else {
-    const speed = Math.min(22, 11 + d * 0.25 + 6 * power);
-    T = d / speed;
-    const fr = 1.2;
+    // Passaggio rasoterra dosato: parte deciso e arriva morbido ai piedi del compagno
+    // (la velocità del gesto conta poco, così un dito veloce non "spara" il pallone).
+    const vStart = Math.max(8, Math.min(16, 8.5 + d * 0.18 + 2.5 * power));
+    const vArrive = Math.min(vStart * 0.8, type === 'through_pass' ? 6 : 4.5);
+    const fr = Math.max(0.5, Math.min(8, (vStart * vStart - vArrive * vArrive) / (2 * Math.max(d, 1))));
+    T = (2 * d) / (vStart + vArrive);
     const dir = new Vector3(target.x - p0.x, 0, target.z - p0.z).normalize();
-    // l'attrito non deve fermare il pallone prima dell'arrivo
-    T = Math.min(T, Math.sqrt((2 * d) / fr) * 0.8);
     const curve = hasCurve ? dev.clone().setLength(curveMag).multiplyScalar(-8 / (T * T)) : new Vector3();
     a = new Vector3(curve.x - dir.x * fr, 0, curve.z - dir.z * fr);
     target.y = BALL_R;
