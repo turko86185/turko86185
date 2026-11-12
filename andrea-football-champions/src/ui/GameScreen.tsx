@@ -95,10 +95,11 @@ export function GameScreen({ engine, session, onEnd, onQuit }: { engine: Engine;
   // GOL → voce italiana
   useEffect(() => {
     if (!banner) return;
-    if (banner.kind === 'good' && banner.text.includes('PARATA')) Audio.say('Che parata Andrea!');
+    // la voce parte dopo la musica, così non la copre
+    if (banner.kind === 'good' && banner.text.includes('PARATA')) setTimeout(() => Audio.say('Che parata Andrea!'), 1800);
     if (banner.text === 'GOOOL!') {
       const phrases = ['Gol! Bravissimo Andrea!', 'Che gol incredibile!', 'Sei un campione!', 'Gol! Fantastico!'];
-      Audio.say(phrases[Math.floor(Math.random() * phrases.length)]);
+      setTimeout(() => Audio.say(phrases[Math.floor(Math.random() * phrases.length)]), 3600);
     }
   }, [banner]);
 

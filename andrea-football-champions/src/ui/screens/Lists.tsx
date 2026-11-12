@@ -172,12 +172,14 @@ export function Settings({ onBack, onChange }: { onBack: () => void; onChange: (
       <button className={`btn big ${s.music ? 'green' : 'red'}`} onClick={() => toggle('music')}>🎵 Musica: {s.music ? 'SÌ' : 'NO'}</button>
       <button className={`btn big ${s.sfx ? 'green' : 'red'}`} onClick={() => toggle('sfx')} data-testid="toggle-sfx">🔊 Effetti e pubblico: {s.sfx ? 'SÌ' : 'NO'}</button>
       <button className={`btn big ${s.voice ? 'green' : 'red'}`} onClick={() => toggle('voice')}>🗣️ Voce: {s.voice ? 'SÌ' : 'NO'}</button>
+      <button className="btn yellow" data-testid="test-music" onClick={() => { Audio.unlock(); Audio.jingle('goal'); }}>🎺 Prova la musica del gol</button>
       <button className="btn" onClick={() => { Save.update((d) => { d.settings.quality = d.settings.quality === 'alta' ? 'media' : 'alta'; }); force((x) => x + 1); onChange(); }}>🖥️ Grafica: {s.quality.toUpperCase()} (si applica al riavvio)</button>
       {/* Area genitori: richiede una pressione lunga per evitare cancellazioni accidentali */}
       {!confirm ? <button className="btn small" style={{ opacity: 0.6 }} onClick={() => setConfirm(true)}>Area genitori: azzera progressi</button> : (
         <div className="card row"><span>Cancellare tutti i progressi?</span><button className="btn small red" onClick={() => { Save.reset(); location.reload(); }}>Sì, azzera</button><button className="btn small" onClick={() => setConfirm(false)}>No</button></div>
       )}
-      <p className="rotate-tip">Nessuna pubblicità, nessun acquisto, nessun dato raccolto. I progressi restano su questo dispositivo.</p>
+      <p className="rotate-tip">Se non senti la musica: alza il volume e controlla che "Musica" sia su SÌ.</p>
+      <p className="rotate-tip">Versione 1.4 · Nessuna pubblicità, nessun acquisto, nessun dato raccolto. I progressi restano su questo dispositivo.</p>
     </div>
   );
 }

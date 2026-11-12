@@ -22,7 +22,51 @@ class AudioManagerImpl {
   private voice: SpeechSynthesisVoice | null = null;
 
   /** Va chiamato da un gesto dell'utente (requisito di iOS) */
+  private silentEl: HTMLAudioElement | null = null;
+  private listenersOn = false;
+
+  /**
+   * iPhone: con l'interruttore "silenzioso" attivo Safari azzittisce l'audio del browser (ma non la voce).
+   * Impostiamo la sessione audio su "playback" (iOS 17+) e, per i modelli più vecchi,
+   * facciamo suonare un audio HTML muto in loop, che ha lo stesso effetto.
+   */
+  private iosPlaybackSession() {
+    try { const as = (navigator as any).audioSession; if (as) as.type = 'playback'; } catch { /* non supportato */ }
+    try {
+      if (!this.silentEl) {
+        const rate = 8000, n = 800;
+        const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+        const w = (o: number, t: string) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+        w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+        v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+        v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+        let bin = ''; const bytes = new Uint8Array(buf); for (const b of bytes) bin += String.fromCharCode(b);
+        const el = document.createElement('audio');
+        el.src = 'data:audio/wav;base64,' + btoa(bin);
+        el.loop = true;
+        el.setAttribute('playsinline', '');
+        (el as any).disableRemotePlayback = true;
+        this.silentEl = el;
+      }
+      this.silentEl.play().catch(() => {});
+    } catch { /* ignora */ }
+  }
+
+  /** Riattiva l'audio se iOS l'ha sospeso (app in background, telefonata, ecc.) */
+  private wake() {
+    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+    if (this.silentEl && this.silentEl.paused) this.silentEl.play().catch(() => {});
+  }
+
   unlock() {
+    this.iosPlaybackSession();
+    if (!this.listenersOn) {
+      this.listenersOn = true;
+      const w = () => this.wake();
+      ['pointerdown', 'touchend', 'click'].forEach((ev) => document.addEventListener(ev, w, { passive: true }));
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) this.wake(); });
+      window.addEventListener('pageshow', w);
+    }
     if (!this.ctx) {
       const AC = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext | undefined;
       if (!AC) return;
@@ -113,6 +157,7 @@ class AudioManagerImpl {
 
   play(s: Sfx, intensity = 1) {
     if (!this.ctx || !this.sfxOn) return;
+    if (this.ctx.state !== 'running') this.wake();
     const t = this.ctx.currentTime + 0.005;
     switch (s) {
       case 'whistle':
@@ -214,8 +259,13 @@ class AudioManagerImpl {
    * Musiche brevi per i momenti importanti:
    *  goal = fanfara da stadio, save = parata eroica, win = vittoria, cup = coppa, ohno = "peccato" simpatico
    */
-  jingle(name: 'goal' | 'save' | 'win' | 'cup' | 'ohno') {
+  jingle(name: 'goal' | 'save' | 'win' | 'cup' | 'ohno', retry = true) {
     if (!this.ctx || !this.musicOn) return;
+    if (this.ctx.state !== 'running') {
+      // audio sospeso da iOS: lo riattiviamo e poi suoniamo
+      if (retry) this.ctx.resume().then(() => this.jingle(name, false)).catch(() => {});
+      return;
+    }
     const t0 = this.ctx.currentTime + 0.05;
     const b = 60 / 150; // battito
     // [nota midi, inizio in battiti, durata in battiti]
