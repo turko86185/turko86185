@@ -32,6 +32,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
         navigateFallback: 'index.html',
+        // la sottocartella /memory/ è un altro gioco (Memory Kids): il calcio non deve intercettarla
+        navigateFallbackDenylist: [/\/memory\//],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
       }
     })
