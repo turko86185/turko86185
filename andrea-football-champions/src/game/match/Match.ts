@@ -375,6 +375,7 @@ export class Match {
     if (kind === 'goal') {
       this.ev.onBanner?.(this.cfg.mode === 'penaltyDefend' ? 'Gol...' : 'GOOOL!', this.cfg.mode === 'penaltyDefend' ? 'bad' : 'good');
       Audio.play('goal');
+      Audio.jingle(this.cfg.mode === 'penaltyDefend' ? 'ohno' : 'goal');
       Audio.crowdLevel(0.45);
       setTimeout(() => Audio.crowdLevel(0.12), 4000);
       this.engine.stadium.setExcitement(1);
@@ -399,6 +400,8 @@ export class Match {
       }
     } else if (kind === 'saved') {
       Audio.play('save');
+      // parata: musica eroica se para Andrea, "peccato" simpatico se para l'avversario
+      Audio.jingle(this.cfg.mode === 'penaltyDefend' ? 'save' : 'ohno');
       if (this.cfg.mode === 'penaltyDefend') { this.keeper?.play('celebrate', { force: true }); Audio.play('cheer'); }
       else this.attackers.forEach((a) => setTimeout(() => a.play('sad', { force: true }), 500));
     } else {

@@ -134,7 +134,7 @@ export function App() {
 function ResultView({ end, onMenu, onRetry, onNext }: { end: GameEnd; onMenu: () => void; onRetry: () => void; onNext: () => void }) {
   const { result, session } = end;
   const isLevel = session instanceof LevelSession;
-  useEffect(() => { Audio.play(result.success ? 'star' : 'click'); if (result.success) Audio.play('applause'); }, []);
+  useEffect(() => { Audio.play(result.success ? 'star' : 'click'); if (result.success) { Audio.play('applause'); Audio.jingle('win'); } }, []);
   return (
     <div className="result" data-testid="result">
       {result.success && <Confetti />}
@@ -168,8 +168,9 @@ function Confetti() {
 function Ceremony({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     Audio.play('goal');
+    Audio.jingle('cup');
     Audio.say('Hai vinto la coppa! Andrea sei il campione dei campioni!');
-    Audio.startMusic();
+    setTimeout(() => Audio.startMusic(), 7000);
   }, []);
   return (
     <div className="result" data-testid="ceremony">

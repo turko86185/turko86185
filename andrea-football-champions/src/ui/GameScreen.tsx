@@ -81,7 +81,7 @@ export function GameScreen({ engine, session, onEnd, onQuit }: { engine: Engine;
     };
     Audio.startCrowd();
     Audio.stopMusic();
-    (window as any).__afc = { match: m, engine, drawer, session };
+    (window as any).__afc = { match: m, engine, drawer, session, audio: Audio };
     return () => {
       clearTimeout(bannerTimer);
       drawer.dispose();

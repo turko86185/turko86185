@@ -9,6 +9,7 @@ class AudioManagerImpl {
   private master!: GainNode;
   private sfxGain!: GainNode;
   private musicGain!: GainNode;
+  private jingleGain!: GainNode;
   private crowdGain!: GainNode;
   private noiseBuf!: AudioBuffer;
   private crowdSrc: AudioBufferSourceNode | null = null;
@@ -29,6 +30,7 @@ class AudioManagerImpl {
       this.master = this.ctx.createGain(); this.master.gain.value = 0.9; this.master.connect(this.ctx.destination);
       this.sfxGain = this.ctx.createGain(); this.sfxGain.connect(this.master);
       this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = 0.22; this.musicGain.connect(this.master);
+      this.jingleGain = this.ctx.createGain(); this.jingleGain.gain.value = 0.55; this.jingleGain.connect(this.master);
       this.crowdGain = this.ctx.createGain(); this.crowdGain.gain.value = 0; this.crowdGain.connect(this.master);
       const len = this.ctx.sampleRate * 2;
       this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
@@ -64,6 +66,7 @@ class AudioManagerImpl {
     this.sfxGain.gain.value = this.sfxOn ? 1 : 0;
     this.crowdGain.gain.value = this.sfxOn ? this.crowdGain.gain.value : 0;
     this.musicGain.gain.value = this.musicOn ? 0.22 : 0;
+    this.jingleGain.gain.value = this.musicOn ? 0.55 : 0;
     if (!this.voiceOn && 'speechSynthesis' in window) speechSynthesis.cancel();
   }
 
@@ -149,8 +152,7 @@ class AudioManagerImpl {
       case 'save': this.noise(t, 0.12, 'lowpass', 900, 1, 0.6); this.play('ooh'); break;
       case 'goal': {
         // tromba da stadio + boato
-        [392, 523, 659, 784].forEach((f, i) => this.tone(t + i * 0.12, f, 0.35, 'sawtooth', 0.12));
-        this.tone(t + 0.5, 1046, 0.9, 'sawtooth', 0.12);
+        // (la fanfara musicale è in jingle('goal'); qui solo boato e applausi)
         this.noise(t, 3.2, 'bandpass', 900, 0.5, 0.7, 0.15);
         this.noise(t + 0.2, 3.0, 'bandpass', 2200, 0.8, 0.3, 0.2);
         this.play('applause');
@@ -168,6 +170,97 @@ class AudioManagerImpl {
       }
       case 'click': this.tone(t, 880, 0.06, 'square', 0.08); break;
       case 'star': [988, 1319, 1760].forEach((f, i) => this.tone(t + i * 0.09, f, 0.25, 'triangle', 0.2)); break;
+    }
+  }
+
+  // ---------------------------------------------------------------- MUSICHE DI GOL E PARATA
+  /** Strumento "ottoni": dente di sega filtrato con attacco morbido */
+  private brass(t: number, midi: number, dur: number, vol: number) {
+    const c = this.ctx!;
+    const hz = 440 * Math.pow(2, (midi - 69) / 12);
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 1;
+    f.frequency.setValueAtTime(hz * 1.5, t);
+    f.frequency.linearRampToValueAtTime(hz * 5, t + 0.06);
+    f.frequency.exponentialRampToValueAtTime(hz * 2.2, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+    g.gain.setValueAtTime(vol * 0.8, t + Math.max(0.04, dur - 0.08));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+    f.connect(g).connect(this.jingleGain);
+    for (const det of [-6, 6]) {
+      const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz; o.detune.value = det;
+      o.connect(f); o.start(t); o.stop(t + dur + 0.1);
+    }
+  }
+  private drum(t: number, kind: 'kick' | 'snare' | 'crash' | 'tom', vol = 1) {
+    const c = this.ctx!;
+    if (kind === 'kick' || kind === 'tom') {
+      const o = c.createOscillator(); const g = c.createGain();
+      o.frequency.setValueAtTime(kind === 'kick' ? 150 : 220, t); o.frequency.exponentialRampToValueAtTime(kind === 'kick' ? 45 : 90, t + 0.15);
+      g.gain.setValueAtTime(0.9 * vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.connect(g).connect(this.jingleGain); o.start(t); o.stop(t + 0.25);
+    } else {
+      const src = c.createBufferSource(); src.buffer = this.noiseBuf;
+      const f = c.createBiquadFilter(); f.type = kind === 'snare' ? 'bandpass' : 'highpass';
+      f.frequency.value = kind === 'snare' ? 1800 : 5000;
+      const g = c.createGain(); const d = kind === 'snare' ? 0.18 : 1.6;
+      g.gain.setValueAtTime(0.5 * vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      src.connect(f).connect(g).connect(this.jingleGain); src.start(t, Math.random()); src.stop(t + d + 0.05);
+    }
+  }
+
+  /**
+   * Musiche brevi per i momenti importanti:
+   *  goal = fanfara da stadio, save = parata eroica, win = vittoria, cup = coppa, ohno = "peccato" simpatico
+   */
+  jingle(name: 'goal' | 'save' | 'win' | 'cup' | 'ohno') {
+    if (!this.ctx || !this.musicOn) return;
+    const t0 = this.ctx.currentTime + 0.05;
+    const b = 60 / 150; // battito
+    // [nota midi, inizio in battiti, durata in battiti]
+    const N = (seq: [number, number, number][], vol = 0.16) => seq.forEach(([m, st, d]) => this.brass(t0 + st * b, m, d * b, vol));
+    const chord = (notes: number[], st: number, d: number, vol = 0.07) => notes.forEach((m) => this.brass(t0 + st * b, m, d * b, vol));
+    switch (name) {
+      case 'goal': {
+        // rullo di tamburi + fanfara ascendente + accordo finale
+        for (let i = 0; i < 8; i++) this.drum(t0 + i * b * 0.25, 'snare', 0.4 + i * 0.08);
+        N([[67, 2, 0.5], [72, 2.5, 0.5], [76, 3, 0.5], [79, 3.5, 1.5], [76, 5, 0.5], [79, 5.5, 2.5]]);
+        N([[84, 8, 0.5], [83, 8.5, 0.5], [81, 9, 0.5], [79, 9.5, 0.5], [84, 10, 3]], 0.15);
+        chord([48, 60, 64, 67], 2, 3.5); chord([53, 65, 69, 72], 5.5, 2.5); chord([55, 67, 71, 74], 8, 2); chord([48, 60, 64, 67, 72], 10, 3);
+        [2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((x) => this.drum(t0 + x * b, 'kick'));
+        [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5].forEach((x) => this.drum(t0 + x * b, 'snare', 0.6));
+        this.drum(t0 + 2 * b, 'crash'); this.drum(t0 + 10 * b, 'crash');
+        break;
+      }
+      case 'save': {
+        N([[72, 0, 0.33], [76, 0.33, 0.33], [79, 0.66, 0.34], [84, 1, 2]], 0.16);
+        chord([60, 64, 67], 1, 2); chord([48], 1, 2, 0.1);
+        this.drum(t0, 'tom'); this.drum(t0 + 0.33 * b, 'tom'); this.drum(t0 + 0.66 * b, 'tom');
+        this.drum(t0 + b, 'kick'); this.drum(t0 + b, 'crash');
+        break;
+      }
+      case 'win': {
+        N([[72, 0, 0.5], [72, 0.5, 0.5], [72, 1, 0.5], [72, 1.5, 1], [68, 2.5, 1], [70, 3.5, 1], [72, 4.5, 0.66], [70, 5.16, 0.34], [72, 5.5, 2.5]], 0.15);
+        chord([48, 60, 64, 67], 0, 2.5); chord([44, 56, 60, 63], 2.5, 1); chord([46, 58, 62, 65], 3.5, 1); chord([48, 60, 64, 67, 72], 5.5, 2.5);
+        [0, 1, 2, 3, 4, 5.5].forEach((x) => this.drum(t0 + x * b, 'kick')); this.drum(t0 + 5.5 * b, 'crash');
+        break;
+      }
+      case 'cup': {
+        N([[67, 0, 1], [72, 1, 1.5], [71, 2.5, 0.5], [72, 3, 1], [76, 4, 1], [74, 5, 1.5], [72, 6.5, 0.5], [74, 7, 1], [79, 8, 3]], 0.15);
+        N([[79, 11, 0.5], [81, 11.5, 0.5], [83, 12, 0.5], [84, 12.5, 3.5]], 0.15);
+        chord([48, 60, 64], 0, 4); chord([53, 65, 69], 4, 2.5); chord([55, 67, 71], 6.5, 4.5); chord([48, 60, 64, 67, 72], 12.5, 3.5);
+        for (let x = 0; x < 16; x += 1) this.drum(t0 + x * b, x % 2 ? 'snare' : 'kick', 0.7);
+        [0, 8, 12.5].forEach((x) => this.drum(t0 + x * b, 'crash'));
+        break;
+      }
+      case 'ohno': {
+        // "uà uà uà uààà" simpatico, senza drammi
+        [[67, 0, 0.8], [66, 0.8, 0.8], [65, 1.6, 0.8], [64, 2.4, 2]].forEach(([m, st, d]) => {
+          this.brass(t0 + st * b, m, d * b, 0.12);
+        });
+        break;
+      }
     }
   }
 
